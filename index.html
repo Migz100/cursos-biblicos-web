@@ -38,6 +38,39 @@ async function load() {
     dl.href = DATA.zip;
     dl.hidden = false;
   }
+  if (dl) {
+    dl.addEventListener('click', async e => {
+      if (dl.dataset.busy) { e.preventDefault(); return; }
+      e.preventDefault();
+      dl.dataset.busy = '1';
+      const label = dl.textContent;
+      dl.textContent = 'Preparando descarga...';
+      try {
+        const resp = await fetch(dl.href);
+        if (!resp.ok) throw new Error(resp.status);
+        const blob = await resp.blob();
+        const file = new File([blob], 'Cursos Biblicos - Todos.zip', { type: 'application/zip' });
+        if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+          await navigator.share({ files: [file], title: 'Cursos Biblicos' });
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'Cursos Biblicos - Todos.zip';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 120000);
+        }
+      } catch (err) {
+        if (err && err.name === 'AbortError') { /* usuario cancelo */ }
+        else window.open(dl.href, '_blank');
+      } finally {
+        dl.textContent = label;
+        delete dl.dataset.busy;
+      }
+    });
+  }
   render(DATA.courses);
 }
 
