@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F5F5F7">
+<title>Curso</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav><div class="inner">
+  <a class="back" href="index.html"><svg width="12" height="20" viewBox="0 0 12 20" fill="none"><path d="M11 1 L2 10 L11 19" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Inicio</a>
+  <span class="brand" style="flex:1;text-align:center" id="title"></span>
+  <div class="spacer" style="width:62px"></div>
+</div></nav>
+<main>
+  <div class="lessonGroup" id="list"></div>
+</main>
+<script>
+const params = new URLSearchParams(location.search);
+const cid = parseInt(params.get('c') || '1', 10);
+
+async function load() {
+  const d = await (await fetch('data.json')).json();
+  const course = d.courses.find(c => c.id === cid);
+  if (!course) { location.href = 'index.html'; return; }
+  document.title = course.name + ' · Cursos Bíblicos';
+  document.getElementById('title').textContent = course.name;
+  const pdfs = await (await fetch('pdfs.json')).json();
+  const keys = Object.keys(pdfs).filter(k => k.startsWith(course.id + '-')).sort();
+  const list = document.getElementById('list');
+  for (const k of keys) {
+    const n = k.split('-')[1];
+    const a = document.createElement('a');
+    a.className = 'row';
+    a.href = 'leer.html?c=' + course.id + '&l=' + n;
+    a.innerHTML = '<div class="num">' + parseInt(n, 10) + '</div><div class="label">Lección ' + parseInt(n, 10) + '</div>' +
+      '<svg class="chev" viewBox="0 0 9 15" fill="none"><path d="M1 1 L8 7.5 L1 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    list.appendChild(a);
+  }
+}
+load();
+</script>
+</body>
+</html>

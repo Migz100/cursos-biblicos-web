@@ -1,0 +1,18 @@
+{
+  "appName": "Cursos Bíblicos",
+  "appSubtitle": "Doce cursos de estudio bíblico. Lecciones en PDF, listas para leer.",
+  "courses": [
+    { "id": 1,  "name": "Fe de Jesús",           "short": "FJ", "color": "#0071E3", "lessons": 19 },
+    { "id": 2,  "name": "La Gran Esperanza",     "short": "GE", "color": "#8E5CFF", "lessons": 18 },
+    { "id": 3,  "name": "Apocalipsis",           "short": "AP", "color": "#E32E2E", "lessons": 19 },
+    { "id": 4,  "name": "Daniel",                "short": "DA", "color": "#FF9F0A", "lessons": 16 },
+    { "id": 5,  "name": "Familia Feliz",         "short": "FF", "color": "#30D158", "lessons": 14 },
+    { "id": 6,  "name": "El Gran Conflicto",     "short": "GC", "color": "#64D2FF", "lessons": 11 },
+    { "id": 7,  "name": "Vuelve a Casa",         "short": "VC", "color": "#FF6482", "lessons": 6 },
+    { "id": 8,  "name": "Juventud Prometedora",  "short": "JP", "color": "#0A84FF", "lessons": 10 },
+    { "id": 9,  "name": "Acampando con el Creador", "short": "AC", "color": "#40C8E0", "lessons": 13 },
+    { "id": 10, "name": "Exploradores de la Verdad", "short": "EV", "color": "#5E5CE6", "lessons": 12 },
+    { "id": 11, "name": "Yo Creo",               "short": "YC", "color": "#FFD60A", "lessons": 12 },
+    { "id": 12, "name": "Jesús y Yo",            "short": "JY", "color": "#34C759", "lessons": 12 }
+  ]
+}

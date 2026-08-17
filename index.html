@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F5F5F7">
+<title>Cursos Bíblicos</title>
+<meta name="description" content="Doce cursos de estudio bíblico: Fe de Jesús, La Gran Esperanza, Apocalipsis, Daniel y más. Lecciones en PDF.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav><div class="inner"><span class="brand" id="brand">Cursos Bíblicos</span></div></nav>
+<main>
+  <div class="hero">
+    <h1 id="h1"></h1>
+    <p id="sub"></p>
+  </div>
+  <div class="searchWrap">
+    <svg class="glass" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="#1D1D1F" stroke-width="1.6"/><line x1="10.8" y1="10.8" x2="15" y2="15" stroke="#1D1D1F" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <input type="search" id="search" placeholder="Buscar curso" autocomplete="off">
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">Ningún curso coincide con "0".</div>
+</main>
+<script>
+const DATA_URL = 'data.json';
+let DATA = null;
+
+async function load() {
+  if (!DATA) DATA = await (await fetch(DATA_URL)).json();
+  document.getElementById('h1').textContent = DATA.appName;
+  document.getElementById('sub').textContent = DATA.appSubtitle;
+  render(DATA.courses);
+}
+
+function render(courses) {
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  grid.innerHTML = '';
+  if (!courses.length) {
+    empty.style.display = '';
+    empty.textContent = 'Ningún curso coincide con "' + document.getElementById('search').value + '".';
+    return;
+  }
+  empty.style.display = 'none';
+  courses.forEach(c => {
+    const a = document.createElement('a');
+    a.className = 'card';
+    a.href = 'curso.html?c=' + c.id;
+    const total = c.lessons;
+    a.innerHTML =
+      '<div class="tile" style="background:' + c.color + '">' + c.short + '</div>' +
+      '<div><div class="name">' + c.name + '</div>' +
+      '<div class="meta">' + total + ' lecciones</div></div>';
+    grid.appendChild(a);
+  });
+}
+
+document.getElementById('search').addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase();
+  const list = DATA.courses.filter(c => c.name.toLowerCase().includes(q) || c.short.toLowerCase().includes(q));
+  render(list);
+});
+
+load();
+</script>
+</body>
+</html>

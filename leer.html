@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FFFFFF">
+<title>Lección</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="reader">
+  <div class="readerNav">
+    <button class="navBtn ghost" id="back">Cursos</button>
+    <div class="title" id="title"></div>
+    <span class="count" id="count"></span>
+    <button class="navBtn" id="prev">&larr; Prev</button>
+    <button class="navBtn" id="next">Sig &rarr;</button>
+  </div>
+  <iframe id="frame" title="Lección"></iframe>
+</div>
+<script>
+const params = new URLSearchParams(location.search);
+const cid = parseInt(params.get('c') || '1', 10);
+const lnum = (params.get('l') || '01').padStart(2, '0');
+let course = null;
+let keys = [];
+const frame = document.getElementById('frame');
+
+async function init() {
+  const DATA = await (await fetch('data.json')).json();
+  course = DATA.courses.find(c => c.id === cid);
+  if (!course) { location.href = 'index.html'; return; }
+  const pdfs = await (await fetch('pdfs.json')).json();
+  keys = Object.keys(pdfs).filter(k => k.startsWith(cid + '-')).sort();
+  const key = cid + '-' + lnum;
+  const realNum = parseInt(lnum, 10);
+  if (!pdfs[key]) {
+    document.title = 'No disponible';
+    document.getElementById('title').textContent = 'Lección ' + realNum + ' no disponible';
+    frame.remove();
+    return;
+  }
+  const idx = keys.indexOf(key);
+  const total = keys.length;
+  document.title = course.name + ' · Lección ' + realNum;
+  document.getElementById('title').textContent = course.name + ' · Lección ' + realNum;
+  document.getElementById('count').textContent = (idx + 1) + ' / ' + total;
+  document.getElementById('prev').style.visibility = idx <= 0 ? 'hidden' : 'visible';
+  document.getElementById('next').style.visibility = idx >= total - 1 ? 'hidden' : 'visible';
+
+  try {
+    const resp = await fetch(pdfs[key]);
+    if (!resp.ok) throw new Error(resp.status);
+    const blob = await resp.blob();
+    frame.src = URL.createObjectURL(blob);
+  } catch (e) {
+    document.getElementById('title').textContent = 'Error al cargar la lección';
+  }
+}
+
+document.getElementById('back').onclick = () => location.href = 'curso.html?c=' + cid;
+document.getElementById('prev').onclick = () => {
+  const n = keys.indexOf(cid + '-' + lnum) - 1;
+  if (n >= 0) location.href = 'leer.html?c=' + cid + '&l=' + keys[n].split('-')[1];
+};
+document.getElementById('next').onclick = () => {
+  const n = keys.indexOf(cid + '-' + lnum) + 1;
+  if (n < keys.length) location.href = 'leer.html?c=' + cid + '&l=' + keys[n].split('-')[1];
+};
+init();
+</script>
+</body>
+</html>
