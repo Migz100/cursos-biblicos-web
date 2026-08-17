@@ -95,10 +95,10 @@ function drawStrokes(ctx, pageEl, w, h) {
   }
 }
 
+let renderTask = null;
 async function renderPage() {
-  console.log('RP: start, pageNum=' + pageNum);
+  if (renderTask) renderTask.cancel();
   const page = await pdfDoc.getPage(pageNum);
-  console.log('RP: got page');
   const box = document.getElementById('pdfBox');
   const html = pageHtml(pageNum);
   box.innerHTML = html;
@@ -116,9 +116,15 @@ async function renderPage() {
   canvas.style.height = viewport.height + 'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
-  console.log('RP: rendering page');
-  await page.render({ canvasContext: ctx, viewport }).promise;
-  console.log('RP: page rendered');
+  try {
+    renderTask = page.render({ canvasContext: ctx, viewport });
+    await renderTask.promise;
+  } catch (e) {
+    if (e && e.name === 'RenderingCancelledException') return;
+    throw e;
+  } finally {
+    renderTask = null;
+  }
   ink.width = viewport.width * dpr;
   ink.height = viewport.height * dpr;
   ink.style.width = viewport.width + 'px';
@@ -126,7 +132,7 @@ async function renderPage() {
   const ictx = ink.getContext('2d');
   ictx.scale(dpr, dpr);
   drawStrokes(ictx, pg, viewport.width, viewport.height);
-  console.log('RP: strokes drawn');
+  
 
   ink.onpointerdown = e => {
     if (!writing) return;
