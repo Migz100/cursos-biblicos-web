@@ -1,6 +1,7 @@
 {
   "appName": "Cursos Bíblicos",
   "appSubtitle": "Doce cursos de estudio bíblico. Lecciones en PDF, listas para leer.",
+  "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/todos/cursos-biblicos-todos-KdxFYsMaLwygdFqIDPSJRTGz5zoEtp.zip",
   "courses": [
     { "id": 1,  "name": "Fe de Jesús",           "short": "FJ", "color": "#0071E3", "lessons": 19 },
     { "id": 2,  "name": "La Gran Esperanza",     "short": "GE", "color": "#8E5CFF", "lessons": 18 },

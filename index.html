@@ -16,6 +16,7 @@
   <div class="hero">
     <h1 id="h1"></h1>
     <p id="sub"></p>
+    <a class="dlBtn" id="dlBtn" download hidden>Descargar todo (ZIP)</a>
   </div>
   <div class="searchWrap">
     <svg class="glass" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="#1D1D1F" stroke-width="1.6"/><line x1="10.8" y1="10.8" x2="15" y2="15" stroke="#1D1D1F" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -32,6 +33,11 @@ async function load() {
   if (!DATA) DATA = await (await fetch(DATA_URL)).json();
   document.getElementById('h1').textContent = DATA.appName;
   document.getElementById('sub').textContent = DATA.appSubtitle;
+  const dl = document.getElementById('dlBtn');
+  if (DATA.zip) {
+    dl.href = DATA.zip;
+    dl.hidden = false;
+  }
   render(DATA.courses);
 }
 
