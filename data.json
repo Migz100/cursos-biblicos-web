@@ -3,17 +3,101 @@
   "appSubtitle": "Doce cursos de estudio bíblico. Lecciones en PDF, listas para leer.",
   "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/todos/cursos-biblicos-todos-KdxFYsMaLwygdFqIDPSJRTGz5zoEtp.zip",
   "courses": [
-    { "id": 1,  "name": "Fe de Jesús",           "short": "FJ", "color": "#0071E3", "lessons": 19 },
-    { "id": 2,  "name": "La Gran Esperanza",     "short": "GE", "color": "#8E5CFF", "lessons": 18 },
-    { "id": 3,  "name": "Apocalipsis",           "short": "AP", "color": "#E32E2E", "lessons": 19 },
-    { "id": 4,  "name": "Daniel",                "short": "DA", "color": "#FF9F0A", "lessons": 16 },
-    { "id": 5,  "name": "Familia Feliz",         "short": "FF", "color": "#30D158", "lessons": 14 },
-    { "id": 6,  "name": "El Gran Conflicto",     "short": "GC", "color": "#64D2FF", "lessons": 11 },
-    { "id": 7,  "name": "Vuelve a Casa",         "short": "VC", "color": "#FF6482", "lessons": 6 },
-    { "id": 8,  "name": "Juventud Prometedora",  "short": "JP", "color": "#0A84FF", "lessons": 10 },
-    { "id": 9,  "name": "Acampando con el Creador", "short": "AC", "color": "#40C8E0", "lessons": 13 },
-    { "id": 10, "name": "Exploradores de la Verdad", "short": "EV", "color": "#5E5CE6", "lessons": 12 },
-    { "id": 11, "name": "Yo Creo",               "short": "YC", "color": "#FFD60A", "lessons": 12 },
-    { "id": 12, "name": "Jesús y Yo",            "short": "JY", "color": "#34C759", "lessons": 12 }
+    {
+      "id": 1,
+      "name": "Fe de Jesús",
+      "short": "FJ",
+      "color": "#0071E3",
+      "lessons": 19,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/fe-de-jesus-zip-G46vSBs1MmmhujJbRZvUURXpL6GDjC.zip"
+    },
+    {
+      "id": 2,
+      "name": "La Gran Esperanza",
+      "short": "GE",
+      "color": "#8E5CFF",
+      "lessons": 18,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/la-gran-esperanza-zip-SHKaBmYsbIUd3TQQXCxYN3BGWwdiey.zip"
+    },
+    {
+      "id": 3,
+      "name": "Apocalipsis",
+      "short": "AP",
+      "color": "#E32E2E",
+      "lessons": 19,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/apocalipsis-zip-fBRrv50S8a9w6BUEv86S28tv4q4gYS.zip"
+    },
+    {
+      "id": 4,
+      "name": "Daniel",
+      "short": "DA",
+      "color": "#FF9F0A",
+      "lessons": 16,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/daniel-zip-QTWLfY2w0OYO3HMMrYUDVDRVJSZKtp.zip"
+    },
+    {
+      "id": 5,
+      "name": "Familia Feliz",
+      "short": "FF",
+      "color": "#30D158",
+      "lessons": 14,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/familia-feliz-zip-0DAdkhyfo6ItzM6gFganDXFMURSReq.zip"
+    },
+    {
+      "id": 6,
+      "name": "El Gran Conflicto",
+      "short": "GC",
+      "color": "#64D2FF",
+      "lessons": 11,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/el-gran-conflicto-zip-lIO44GM4SodjRytmRzoaBgTqSDNeCJ.zip"
+    },
+    {
+      "id": 7,
+      "name": "Vuelve a Casa",
+      "short": "VC",
+      "color": "#FF6482",
+      "lessons": 6,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/vuelve-a-casa-zip-8vOfQQ7oVKj58tKwd03FwGYGTwM7WU.zip"
+    },
+    {
+      "id": 8,
+      "name": "Juventud Prometedora",
+      "short": "JP",
+      "color": "#0A84FF",
+      "lessons": 10,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/juventud-prometedora-zip-3vclyBV6bGoRjFhkaJ52nB7D72zCF1.zip"
+    },
+    {
+      "id": 9,
+      "name": "Acampando con el Creador",
+      "short": "AC",
+      "color": "#40C8E0",
+      "lessons": 13,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/acampando-con-el-creador-zip-aWpdsKPZUO8MAetCR26awxFSCa66an.zip"
+    },
+    {
+      "id": 10,
+      "name": "Exploradores de la Verdad",
+      "short": "EV",
+      "color": "#5E5CE6",
+      "lessons": 12,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/exploradores-de-la-verdad-zip-ENwy7K31JDIgQzcp6jsgAVJf9lcqFp.zip"
+    },
+    {
+      "id": 11,
+      "name": "Yo Creo",
+      "short": "YC",
+      "color": "#FFD60A",
+      "lessons": 12,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/yo-creo-zip-UYSvFwmKWuvOnEXV0DVmFloSVlvFJ0.zip"
+    },
+    {
+      "id": 12,
+      "name": "Jesús y Yo",
+      "short": "JY",
+      "color": "#34C759",
+      "lessons": 12,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/jesus-y-yo-zip-Vj1wy5RM6DOIMFt2p6VfvPFbQf4A43.zip"
+    }
   ]
 }
