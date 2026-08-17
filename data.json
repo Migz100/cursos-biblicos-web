@@ -98,6 +98,37 @@
       "color": "#34C759",
       "lessons": 12,
       "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/jesus-y-yo-zip-Vj1wy5RM6DOIMFt2p6VfvPFbQf4A43.zip"
+    },
+    {
+      "id": 13,
+      "name": "La Fe de Jesús (PowerPoint)",
+      "short": "LF",
+      "color": "#FF453A",
+      "lessons": 20,
+      "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/la-fe-de-jesus-pdf-A0YnN9oabNA4kVaE5g72MCC8QNMNw5.zip",
+      "pptZip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/la-fe-de-jesus-ppt-LPBj4PmBn0VD4wvGLu7EliGareM63a.zip",
+      "titles": [
+        "Como es Dios",
+        "La Bibliea",
+        "La orscion",
+        "La segunda venida",
+        "Se ñales",
+        "El origen del pecado",
+        "La salvacion",
+        "El Perdon de los pecados",
+        "El juicio",
+        "La Ley de Dios",
+        "Dia de des canso",
+        "El sabado",
+        "La muerte",
+        "La Iglecia verdadera",
+        "El don de Orofecia",
+        "Salud",
+        "El Bautismo",
+        "Mayordomia",
+        "Vida Cristiana",
+        "Dios nos llama"
+      ]
     }
   ]
 }
