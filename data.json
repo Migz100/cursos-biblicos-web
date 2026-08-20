@@ -1,7 +1,7 @@
 {
  "appName": "Cursos Bíblicos",
  "appSubtitle": "Doce cursos de estudio bíblico, más el curso La Fe de Jesús en PowerPoint. Lecciones en PDF, listas para leer.",
- "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/todos/cursos-biblicos-todos-v2-HCaHkIDD53wJoCDs78JZuF7ZKwvz8j.zip",
+ "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/todos/cursos-biblicos-todos-v3-U903kzUWNQvcMirvxw5xMYG8waXDop.zip",
  "courses": [
   {
    "id": 1,
@@ -100,7 +100,7 @@
    "color": "#FFD60A",
    "section": "cursos",
    "lessons": 13,
-   "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/yo-creo-zip-jhyD490unthaUeJLKrbaFXuGIZuyrT.zip"
+   "zip": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/zips/yo-creo-v2-xStjz57hpkPyhDYlBNy9TOr9gLT9E3.zip"
   },
   {
    "id": 12,
