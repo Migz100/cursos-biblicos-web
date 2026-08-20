@@ -22,7 +22,7 @@
     <svg class="glass" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="#1D1D1F" stroke-width="1.6"/><line x1="10.8" y1="10.8" x2="15" y2="15" stroke="#1D1D1F" stroke-width="1.6" stroke-linecap="round"/></svg>
     <input type="search" id="search" placeholder="Buscar curso" autocomplete="off">
   </div>
-  <div class="grid" id="grid"></div>
+  <div id="sections"></div>
   <div class="empty" id="empty" style="display:none">Ningún curso coincide con "0".</div>
 </main>
 <script>
@@ -74,26 +74,43 @@ async function load() {
   render(DATA.courses);
 }
 
+const SECTIONS = [
+  { id: 'cursos', title: 'Cursos Bíblicos' },
+  { id: 'lafe', title: 'La Fe de Jesús (PowerPoint)' }
+];
+
+function makeCard(c) {
+  const a = document.createElement('a');
+  a.className = 'card';
+  a.href = 'curso.html?c=' + c.id;
+  a.innerHTML =
+    '<div class="tile" style="background:' + c.color + '">' + c.short + '</div>' +
+    '<div><div class="name">' + c.name + '</div>' +
+    '<div class="meta">' + c.lessons + ' lecciones</div></div>';
+  return a;
+}
+
 function render(courses) {
-  const grid = document.getElementById('grid');
+  const wrap = document.getElementById('sections');
   const empty = document.getElementById('empty');
-  grid.innerHTML = '';
+  wrap.innerHTML = '';
   if (!courses.length) {
     empty.style.display = '';
     empty.textContent = 'Ningún curso coincide con "' + document.getElementById('search').value + '".';
     return;
   }
   empty.style.display = 'none';
-  courses.forEach(c => {
-    const a = document.createElement('a');
-    a.className = 'card';
-    a.href = 'curso.html?c=' + c.id;
-    const total = c.lessons;
-    a.innerHTML =
-      '<div class="tile" style="background:' + c.color + '">' + c.short + '</div>' +
-      '<div><div class="name">' + c.name + '</div>' +
-      '<div class="meta">' + total + ' lecciones</div></div>';
-    grid.appendChild(a);
+  SECTIONS.forEach(s => {
+    const list = courses.filter(c => (c.section || 'cursos') === s.id);
+    if (!list.length) return;
+    const h = document.createElement('h2');
+    h.className = 'secHead';
+    h.textContent = s.title;
+    wrap.appendChild(h);
+    const g = document.createElement('div');
+    g.className = 'grid';
+    list.forEach(c => g.appendChild(makeCard(c)));
+    wrap.appendChild(g);
   });
 }
 
