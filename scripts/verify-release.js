@@ -3,6 +3,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { buildStarterManifest, totalLessons } = require('../api/_lib/cms/core');
+const { LESSON_TITLES: FE_TITLES } = require('./fe-de-jesus-source');
 
 const COURSE_NAME = 'La Fe de Jesús 2';
 const TITLES = [
@@ -68,13 +69,28 @@ async function main() {
 
   invariant(manifest.courses.length === 14, 'Expected 14 courses');
   invariant(totalLessons(manifest) === 215, 'Expected 215 lessons');
-  for (const expected of starter.courses) {
+  for (const expected of starter.courses.slice(1)) {
     const actual = manifest.courses.find(course => course.id === expected.id);
     invariant(actual, `Starter course ${expected.id} is missing`);
     invariant(actual.name === expected.name, `Starter course ${expected.id} was renamed`);
     invariant(actual.lessons.length === expected.lessons.length, `Starter course ${expected.id} lesson count changed`);
     invariant(JSON.stringify(actual.lessons) === JSON.stringify(expected.lessons), `Starter course ${expected.id} lessons changed`);
   }
+
+  const starterFe = starter.courses[0];
+  const fe = manifest.courses.find(item => item.id === starterFe.id);
+  invariant(fe, 'Fe de Jesús is missing');
+  const feIdentity = structuredClone(fe);
+  const starterFeIdentity = structuredClone(starterFe);
+  delete feIdentity.lessons;
+  delete starterFeIdentity.lessons;
+  invariant(JSON.stringify(feIdentity) === JSON.stringify(starterFeIdentity), 'A Fe de Jesús course field other than lessons changed');
+  invariant(JSON.stringify(fe.lessons.map(item => item.title)) === JSON.stringify(FE_TITLES), 'Fe de Jesús titles or order changed');
+  invariant(fe.lessons.every((item, index) => (
+    item.id === `1-${String(index + 1).padStart(2, '0')}` &&
+    item.legacyNumber === String(index + 1).padStart(2, '0') &&
+    item.type === 'pdf' && item.managed
+  )), 'Fe de Jesús lesson identity or format is wrong');
 
   const course = manifest.courses.find(item => item.name === COURSE_NAME);
   invariant(course?.section === 'lafe', 'La Fe de Jesús 2 is not in the PowerPoint section');
@@ -86,6 +102,7 @@ async function main() {
 
   const expectedNamespace = baseUrl === 'https://cursos-biblicos-web.vercel.app' ? '/cms/production/assets/' : '/cms/preview/';
   invariant(course.lessons.every(item => new URL(item.url).pathname.includes(expectedNamespace)), 'An asset is in the wrong environment namespace');
+  invariant(fe.lessons.every(item => new URL(item.url).pathname.includes(expectedNamespace)), 'A Fe de Jesús asset is in the wrong environment namespace');
 
   const cover = await readDeploymentAsset(baseUrl, course.coverUrl, protectedPreview);
   invariant(cover.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])), 'Cover image is unavailable');
@@ -95,8 +112,14 @@ async function main() {
     const bytes = Buffer.from(await response.arrayBuffer());
     invariant(bytes[0] === 0x50 && bytes[1] === 0x4B, `Lesson ${index + 1} is not a PowerPoint file`);
   }));
+  await Promise.all(fe.lessons.map(async (item, index) => {
+    const response = await fetch(item.url, { headers: { Range: 'bytes=0-15' }, cache: 'no-store' });
+    invariant(response.ok, `Fe de Jesús lesson ${index + 1} is unavailable`);
+    const bytes = Buffer.from(await response.arrayBuffer());
+    invariant(bytes.subarray(0, 5).toString('ascii') === '%PDF-', `Fe de Jesús lesson ${index + 1} is not a PDF`);
+  }));
 
-  process.stdout.write(JSON.stringify({ revision: manifest.revision, courses: 14, lessons: 215, laFe2Lessons: 30, assetsVerified: 30 }) + '\n');
+  process.stdout.write(JSON.stringify({ revision: manifest.revision, courses: 14, lessons: 215, feLessons: 20, laFe2Lessons: 30, assetsVerified: 50 }) + '\n');
 }
 
 main().catch(error => {

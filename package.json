@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "test": "node --test",
-    "check": "node --check site.js && node --check course.js && node --check admin/admin.js && node --check scripts/import-la-fe-2.js && node --check scripts/verify-release.js && node --check scripts/exercise-release.js && node --check scripts/backup-production.js && node scripts/check-html-modules.js"
+    "check": "node --check site.js && node --check course.js && node --check presentation.js && node --check admin/admin.js && node --check api/presentation.js && node --check api/_lib/cms/presentation.js && node --check scripts/fe-de-jesus-source.js && node --check scripts/replace-fe-de-jesus.js && node --check scripts/import-la-fe-2.js && node --check scripts/verify-release.js && node --check scripts/exercise-release.js && node --check scripts/backup-production.js && node scripts/check-html-modules.js"
   },
   "dependencies": {
     "@vercel/blob": "2.8.0",

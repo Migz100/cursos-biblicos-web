@@ -28,3 +28,17 @@ test('whole-course imports resolve each receipt and discard nested raw assets', 
     { title: 'Dos', asset: { validated: true, pathname: 'cms/assets/two' } }
   ]);
 });
+
+test('whole-course replacements resolve every asset from a signed token', () => {
+  const safe = resolveActionAssets({
+    type: 'course.replaceLessons',
+    lessons: [
+      { title: 'Uno', assetToken: 'one', asset: { url: 'https://attacker.invalid/one' } },
+      { title: 'Dos', assetToken: 'two', asset: { url: 'https://attacker.invalid/two' } }
+    ]
+  }, token => ({ validated: true, pathname: `cms/assets/${token}` }));
+  assert.deepEqual(safe.lessons, [
+    { title: 'Uno', asset: { validated: true, pathname: 'cms/assets/one' } },
+    { title: 'Dos', asset: { validated: true, pathname: 'cms/assets/two' } }
+  ]);
+});

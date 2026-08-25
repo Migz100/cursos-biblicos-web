@@ -3,7 +3,7 @@ const { allowMethod, readJson, sendError, standardHeaders } = require('../_lib/c
 const { requireCsrf } = require('../_lib/cms/security');
 const { discardUpload, enforceRate, finalizeUpload, prepareUpload } = require('../_lib/cms/storage');
 
-const VISITOR_UPLOAD_LIMIT = { count: 40, bytes: 150 * 1024 * 1024, windowMs: 24 * 60 * 60 * 1000 };
+const VISITOR_UPLOAD_LIMIT = { count: 70, bytes: 150 * 1024 * 1024, windowMs: 24 * 60 * 60 * 1000 };
 const GLOBAL_UPLOAD_LIMIT = { count: 100, bytes: 500 * 1024 * 1024, windowMs: 24 * 60 * 60 * 1000 };
 
 module.exports = async function handler(req, res) {

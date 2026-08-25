@@ -34,10 +34,13 @@ async function downloadUrl(url, name, button) {
 function lessonRow(course, lesson, index) {
   const row = document.createElement('a');
   row.className = 'row';
+  const isPresentation = ['ppt', 'pptx', 'ppsx'].includes(lesson.type);
   row.href = lesson.type === 'pdf'
     ? `leer.html?c=${encodeURIComponent(course.id)}&l=${encodeURIComponent(lesson.legacyNumber || lesson.id)}`
-    : lesson.downloadUrl || lesson.url;
-  if (lesson.type !== 'pdf') row.target = '_blank';
+    : isPresentation
+      ? `presentacion.html?c=${encodeURIComponent(course.id)}&l=${encodeURIComponent(lesson.id)}`
+      : lesson.downloadUrl || lesson.url;
+  if (lesson.type !== 'pdf' && !isPresentation) row.target = '_blank';
 
   const number = document.createElement('div');
   number.className = 'num';
@@ -61,15 +64,9 @@ function lessonRow(course, lesson, index) {
   };
   const chevron = document.createElement('span');
   chevron.className = 'chevText';
+  chevron.setAttribute('aria-hidden', 'true');
   chevron.textContent = '›';
   row.append(number, label, kind, button, chevron);
-  if (lesson.type !== 'pdf') {
-    row.onclick = event => {
-      if (event.target === button) return;
-      event.preventDefault();
-      downloadUrl(lesson.downloadUrl || lesson.url, lesson.originalName || `${lesson.title}.${lesson.type}`, button);
-    };
-  }
   return row;
 }
 

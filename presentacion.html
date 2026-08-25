@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FFFFFF">
+<title>Presentación</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="presentationViewer">
+  <div class="readerNav presentationNav">
+    <a class="navBtn ghost presentationBack" id="back" href="index.html">Curso</a>
+    <div class="title" id="title">Cargando presentación...</div>
+    <button class="navBtn" id="fullScreen" type="button">Pantalla completa</button>
+    <a class="navBtn ghost" id="openViewer" target="_blank" rel="noopener" hidden>Abrir</a>
+    <button class="navBtn ghost" id="download" type="button" disabled>Descargar</button>
+  </div>
+  <div class="presentationStage" id="stage">
+    <div class="presentationStatus" id="status" role="status">Preparando la presentación...</div>
+    <iframe
+      id="presentationFrame"
+      title="Visor de presentación"
+      referrerpolicy="no-referrer"
+      sandbox="allow-downloads allow-forms allow-same-origin allow-scripts"
+      allow="fullscreen"
+      allowfullscreen
+      hidden></iframe>
+    <div class="presentationFallback" id="fallback" hidden>
+      <strong>No se pudo mostrar la presentación.</strong>
+      <span>Puedes abrir el visor en otra pestaña o descargar el archivo.</span>
+    </div>
+  </div>
+</div>
+<script src="presentation.js"></script>
+</body>
+</html>

@@ -91,6 +91,31 @@ test('whole-course import creates all lessons atomically', () => {
   assert.equal(original.courses.length, 13);
 });
 
+test('whole-course lesson replacement is atomic and preserves every other course', () => {
+  const original = buildStarterManifest();
+  const untouched = JSON.stringify(original.courses.slice(1));
+  const result = applyMutation(original, {
+    type: 'course.replaceLessons',
+    courseId: '1',
+    confirmText: 'Fe de Jesús',
+    lessons: [
+      { title: 'Primera nueva', asset: asset('nueva-uno.pdf') },
+      { title: 'Segunda nueva', asset: asset('nueva-dos.pdf') }
+    ]
+  });
+  const course = result.manifest.courses[0];
+  assert.equal(course.name, 'Fe de Jesús');
+  assert.deepEqual(course.lessons.map(item => item.title), ['Primera nueva', 'Segunda nueva']);
+  assert.equal(course.lessons[0].id, original.courses[0].lessons[0].id);
+  assert.equal(course.lessons[0].legacyNumber, original.courses[0].lessons[0].legacyNumber);
+  assert.equal(JSON.stringify(result.manifest.courses.slice(1)), untouched);
+  assert.equal(result.manifest.trash.length, 0);
+  assert.equal(original.courses[0].lessons.length, 20);
+  assert.throws(() => applyMutation(original, {
+    type: 'course.replaceLessons', courseId: '1', confirmText: 'otro', lessons: [{ title: 'Uno', asset: asset() }]
+  }), error => error.code === 'CONFIRMATION_REQUIRED');
+});
+
 test('lesson removal cannot affect unrelated lessons or assets', () => {
   const original = buildStarterManifest();
   const course = original.courses[0];

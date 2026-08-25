@@ -279,6 +279,26 @@ function applyMutation(input, action) {
       label = `Curso reordenado: ${course.name}`;
       break;
     }
+    case 'course.replaceLessons': {
+      const course = findCourse(manifest, action.courseId);
+      if (action.confirmText !== course.name) {
+        throw new CmsError(400, 'CONFIRMATION_REQUIRED', 'Escribe el nombre exacto del curso para reemplazar sus lecciones.');
+      }
+      const requestedLessons = Array.isArray(action.lessons) ? action.lessons : [];
+      const nextTotal = totalLessons(manifest) - course.lessons.length + requestedLessons.length;
+      if (!requestedLessons.length || requestedLessons.length > MAX_LESSONS_PER_COURSE || nextTotal > MAX_TOTAL_LESSONS) {
+        throw new CmsError(409, 'LESSON_LIMIT', 'La cantidad de lecciones no es válida.');
+      }
+      const previousLessons = course.lessons;
+      course.lessons = requestedLessons.map((item, index) => ({
+        id: previousLessons[index]?.id || `l_${crypto.randomUUID()}`,
+        legacyNumber: previousLessons[index]?.legacyNumber || null,
+        title: cleanText(item.title, 100, 'El título de la lección'),
+        ...requireAsset(item.asset)
+      }));
+      label = `Lecciones reemplazadas en ${course.name}`;
+      break;
+    }
     case 'course.remove': {
       const index = manifest.courses.findIndex(item => item.id === String(action.courseId));
       if (index < 0) throw new CmsError(404, 'COURSE_NOT_FOUND', 'El curso ya no existe.');
