@@ -11,12 +11,13 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<nav><div class="inner"><span class="brand" id="brand">Cursos Bíblicos</span></div></nav>
+<nav><div class="inner"><span class="brand" id="brand">Cursos Bíblicos</span><span class="spacer"></span><a class="manageLink" href="admin/">Administrar</a></div></nav>
 <main>
   <div class="hero">
     <h1 id="h1"></h1>
     <p id="sub"></p>
-    <a class="dlBtn" id="dlBtn" download hidden>Descargar todo (ZIP)</a>
+    <a class="dlBtn" id="dlBtn" download hidden>Descargar catálogo original (ZIP)</a>
+    <p class="archiveNote" id="archiveNote" hidden>Este ZIP conserva el catálogo inicial. Los cambios nuevos se descargan por lección.</p>
   </div>
   <div class="searchWrap">
     <svg class="glass" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="#1D1D1F" stroke-width="1.6"/><line x1="10.8" y1="10.8" x2="15" y2="15" stroke="#1D1D1F" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -25,102 +26,6 @@
   <div id="sections"></div>
   <div class="empty" id="empty" style="display:none">Ningún curso coincide con "0".</div>
 </main>
-<script>
-const DATA_URL = 'data.json';
-let DATA = null;
-
-async function load() {
-  if (!DATA) DATA = await (await fetch(DATA_URL)).json();
-  document.getElementById('h1').textContent = DATA.appName;
-  document.getElementById('sub').textContent = DATA.appSubtitle;
-  const dl = document.getElementById('dlBtn');
-  if (DATA.zip) {
-    dl.href = DATA.zip;
-    dl.hidden = false;
-  }
-  if (dl) {
-    dl.addEventListener('click', async e => {
-      if (dl.dataset.busy) { e.preventDefault(); return; }
-      e.preventDefault();
-      dl.dataset.busy = '1';
-      const label = dl.textContent;
-      dl.textContent = 'Preparando descarga...';
-      try {
-        const resp = await fetch(dl.href);
-        if (!resp.ok) throw new Error(resp.status);
-        const blob = await resp.blob();
-        const file = new File([blob], 'Cursos Biblicos - Todos.zip', { type: 'application/zip' });
-        if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-          await navigator.share({ files: [file], title: 'Cursos Biblicos' });
-        } else {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'Cursos Biblicos - Todos.zip';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 120000);
-        }
-      } catch (err) {
-        if (err && err.name === 'AbortError') { /* usuario cancelo */ }
-        else window.open(dl.href, '_blank');
-      } finally {
-        dl.textContent = label;
-        delete dl.dataset.busy;
-      }
-    });
-  }
-  render(DATA.courses);
-}
-
-const SECTIONS = [
-  { id: 'cursos', title: 'Cursos Bíblicos' },
-  { id: 'lafe', title: 'La Fe de Jesús (PowerPoint)' }
-];
-
-function makeCard(c) {
-  const a = document.createElement('a');
-  a.className = 'card';
-  a.href = 'curso.html?c=' + c.id;
-  a.innerHTML =
-    '<div class="tile" style="background:' + c.color + '">' + c.short + '</div>' +
-    '<div><div class="name">' + c.name + '</div>' +
-    '<div class="meta">' + c.lessons + ' lecciones</div></div>';
-  return a;
-}
-
-function render(courses) {
-  const wrap = document.getElementById('sections');
-  const empty = document.getElementById('empty');
-  wrap.innerHTML = '';
-  if (!courses.length) {
-    empty.style.display = '';
-    empty.textContent = 'Ningún curso coincide con "' + document.getElementById('search').value + '".';
-    return;
-  }
-  empty.style.display = 'none';
-  SECTIONS.forEach(s => {
-    const list = courses.filter(c => (c.section || 'cursos') === s.id);
-    if (!list.length) return;
-    const h = document.createElement('h2');
-    h.className = 'secHead';
-    h.textContent = s.title;
-    wrap.appendChild(h);
-    const g = document.createElement('div');
-    g.className = 'grid';
-    list.forEach(c => g.appendChild(makeCard(c)));
-    wrap.appendChild(g);
-  });
-}
-
-document.getElementById('search').addEventListener('input', e => {
-  const q = e.target.value.trim().toLowerCase();
-  const list = DATA.courses.filter(c => c.name.toLowerCase().includes(q) || c.short.toLowerCase().includes(q));
-  render(list);
-});
-
-load();
-</script>
+<script src="site.js"></script>
 </body>
 </html>

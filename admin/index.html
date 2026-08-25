@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="referrer" content="no-referrer">
+<title>Administrar cursos</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<nav><div class="inner"><a class="back" href="../index.html">‹ Inicio</a><span class="brand adminTitle">Administrar</span><span class="spacer"></span></div></nav>
+<main class="adminMain">
+  <section class="adminIntro">
+    <h1>Administrar cursos</h1>
+    <p>Los cambios que hagas aquí se verán para todos. Cualquier curso o lección que quites irá primero a la papelera y se puede restaurar.</p>
+  </section>
+  <div class="adminActions">
+    <button class="primaryAction" id="addCourse" type="button">Agregar curso</button>
+    <button class="secondaryAction" id="openTrash" type="button">Papelera</button>
+    <button class="secondaryAction" id="openHistory" type="button">Historial</button>
+  </div>
+  <p class="status" id="status" role="status">Cargando catálogo...</p>
+  <div id="courseManager"></div>
+</main>
+
+<dialog id="courseDialog" class="adminDialog">
+  <form id="courseForm" method="dialog">
+    <h2 id="courseDialogTitle">Agregar curso</h2>
+    <input type="hidden" id="editingCourseId">
+    <label>Nombre del curso<input id="courseName" required maxlength="80" autocomplete="off"></label>
+    <label>Iniciales<input id="courseShort" required maxlength="5" autocomplete="off" placeholder="Ejemplo: LF"></label>
+    <label>Sección<select id="courseSection"><option value="cursos">Cursos Bíblicos</option><option value="lafe">La Fe de Jesús (PowerPoint)</option></select></label>
+    <label>Color<input id="courseColor" type="color" value="#0071E3"></label>
+    <label id="courseFilesLabel">Lecciones para este curso (opcional)<input id="courseFiles" type="file" multiple accept=".pdf,.ppt,.pptx,.ppsx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.presentationml.slideshow"></label>
+    <p class="formHint">Puedes elegir archivos desde Files en iPhone o desde tu computadora. Máximo 25 MB por archivo.</p>
+    <div class="dialogActions"><button type="button" class="secondaryAction" data-close="courseDialog">Cancelar</button><button class="primaryAction" id="saveCourse" type="submit">Guardar</button></div>
+  </form>
+</dialog>
+
+<dialog id="listDialog" class="adminDialog wideDialog">
+  <div class="dialogHead"><h2 id="listDialogTitle"></h2><button type="button" class="closeButton" data-close="listDialog" aria-label="Cerrar">×</button></div>
+  <div id="listDialogBody"></div>
+</dialog>
+
+<div class="toast" id="toast" hidden><span id="toastText"></span><button id="toastUndo" type="button">Deshacer</button></div>
+<script src="admin.js"></script>
+</body>
+</html>

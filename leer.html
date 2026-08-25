@@ -8,7 +8,6 @@
 <meta name="theme-color" content="#FFFFFF">
 <title>Lección</title>
 <link rel="stylesheet" href="styles.css">
-<script src="vendor/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -35,12 +34,14 @@
     </div>
   </div>
 </div>
-<script>
+<script type="module">
+import * as pdfjsLib from './vendor/pdf.min.mjs';
 const params = new URLSearchParams(location.search);
-const cid = parseInt(params.get('c') || '1', 10);
-const lnum = (params.get('l') || '01').padStart(2, '0');
+const cid = params.get('c') || '1';
+const lessonParam = params.get('l') || '1-01';
 let course = null;
-let keys = [];
+let lessons = [];
+let lesson = null;
 let pdfDoc = null;
 let pageNum = 1;
 let strokes = [];
@@ -49,9 +50,10 @@ let currentSize = 2;
 let writing = false;
 let drawing = false;
 let lastX = 0, lastY = 0, curStroke = null;
+let clearBackup = null;
 const ANOT = 'cursosBiblicosAnot_';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.mjs';
 
 function pageHtml(n) {
   return '<div class="pg" data-pg="' + n + '">' +
@@ -60,16 +62,31 @@ function pageHtml(n) {
     '</div>';
 }
 
+function shortHash(value) {
+  let hash = 2166136261;
+  for (const character of value) {
+    hash ^= character.codePointAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function annotationKey() {
+  if (lesson && !lesson.managed && lesson.legacyNumber) return ANOT + cid + '_' + lesson.legacyNumber;
+  const id = lesson?.id || lessonParam;
+  return ANOT + cid + '_' + id + '_' + shortHash(lesson?.url || 'sin-archivo');
+}
+
 function loadAnot() {
   try {
-    const raw = localStorage.getItem(ANOT + cid + '_' + lnum);
+    const raw = localStorage.getItem(annotationKey());
     strokes = raw ? JSON.parse(raw) : [];
   } catch (e) { strokes = []; }
 }
 
 function saveAnot() {
   try {
-    localStorage.setItem(ANOT + cid + '_' + lnum, JSON.stringify(strokes));
+    localStorage.setItem(annotationKey(), JSON.stringify(strokes));
   } catch (e) {}
 }
 
@@ -138,9 +155,12 @@ async function renderPage() {
     if (!writing) return;
     e.preventDefault();
     drawing = true;
+    clearBackup = null;
     const rect = ink.getBoundingClientRect();
     const p = strokeToPoints(e, rect, viewport.width, viewport.height);
     curStroke = { page: pageNum, color: currentColor, size: currentSize, points: [p] };
+    lastX = p.x * viewport.width;
+    lastY = p.y * viewport.height;
   };
   ink.onpointermove = e => {
     if (!drawing) return;
@@ -179,53 +199,54 @@ function updatePgNav() {
 }
 
 async function loadPdf(url) {
-  pdfDoc = await pdfjsLib.getDocument(url).promise;
+  pdfDoc = await pdfjsLib.getDocument({ url, isEvalSupported: false }).promise;
   pageNum = 1;
   await renderPage();
 }
 
 async function init() {
-  const DATA = await (await fetch('data.json')).json();
+  const response = await fetch('/api/catalog');
+  const DATA = await response.json();
   course = DATA.courses.find(c => c.id === cid);
   if (!course) { location.href = 'index.html'; return; }
-  const pdfs = await (await fetch('pdfs.json')).json();
-  keys = Object.keys(pdfs).filter(k => k.startsWith(cid + '-')).sort();
-  const key = cid + '-' + lnum;
-  const realNum = parseInt(lnum, 10);
-  const title = course.titles ? (course.titles[keys.indexOf(key)] || '') : '';
-  if (!pdfs[key]) {
+  lessons = course.lessons.filter(item => item.type === 'pdf');
+  lesson = lessons.find(item => item.id === lessonParam || item.legacyNumber === lessonParam.padStart(2, '0'));
+  if (!lesson) {
     document.title = 'No disponible';
-    document.getElementById('title').textContent = 'Lección ' + realNum + ' no disponible';
-    document.getElementById('pdfBox').innerHTML = '<p class="emptyMsg">Este archivo no esta disponible en el PDF original.</p>';
+    document.getElementById('title').textContent = 'Lección no disponible';
+    const message = document.createElement('p');
+    message.className = 'emptyMsg';
+    message.textContent = 'Este archivo no está disponible.';
+    document.getElementById('pdfBox').replaceChildren(message);
     return;
   }
-  const idx = keys.indexOf(key);
-  const total = keys.length;
-  document.title = course.name + ' · ' + (title || 'Lección ' + realNum);
-  document.getElementById('title').textContent = course.name + ' · ' + (title || 'Lección ' + realNum);
+  const idx = lessons.indexOf(lesson);
+  const total = lessons.length;
+  document.title = course.name + ' · ' + lesson.title;
+  document.getElementById('title').textContent = course.name + ' · ' + lesson.title;
   document.getElementById('count').textContent = (idx + 1) + ' / ' + total;
   document.getElementById('prev').style.visibility = idx <= 0 ? 'hidden' : 'visible';
   document.getElementById('next').style.visibility = idx >= total - 1 ? 'hidden' : 'visible';
 
   loadAnot();
-  if (cid <= 12) {
+  if (course.section !== 'lafe') {
     document.getElementById('writeTools').style.display = '';
   }
   try {
-    await loadPdf(pdfs[key]);
+    await loadPdf(lesson.url);
   } catch (e) {
     document.getElementById('pdfBox').innerHTML = '<p class="emptyMsg">Error al cargar la lección.</p>';
   }
 }
 
-document.getElementById('back').onclick = () => location.href = 'curso.html?c=' + cid;
+document.getElementById('back').onclick = () => location.href = 'curso.html?c=' + encodeURIComponent(cid);
 document.getElementById('prev').onclick = () => {
-  const n = keys.indexOf(cid + '-' + lnum) - 1;
-  if (n >= 0) location.href = 'leer.html?c=' + cid + '&l=' + keys[n].split('-')[1];
+  const n = lessons.indexOf(lesson) - 1;
+  if (n >= 0) location.href = 'leer.html?c=' + encodeURIComponent(cid) + '&l=' + encodeURIComponent(lessons[n].legacyNumber || lessons[n].id);
 };
 document.getElementById('next').onclick = () => {
-  const n = keys.indexOf(cid + '-' + lnum) + 1;
-  if (n < keys.length) location.href = 'leer.html?c=' + cid + '&l=' + keys[n].split('-')[1];
+  const n = lessons.indexOf(lesson) + 1;
+  if (n < lessons.length) location.href = 'leer.html?c=' + encodeURIComponent(cid) + '&l=' + encodeURIComponent(lessons[n].legacyNumber || lessons[n].id);
 };
 document.getElementById('pgPrev').onclick = async () => {
   if (pageNum <= 1) return;
@@ -244,13 +265,21 @@ document.getElementById('wPen').onclick = () => {
   document.getElementById('wPen').classList.toggle('active', writing);
 };
 document.getElementById('wUndo').onclick = () => {
-  const last = strokes.length ? strokes[strokes.length - 1] : null;
-  if (!last) return;
-  strokes.pop();
+  if (clearBackup) {
+    strokes = clearBackup;
+    clearBackup = null;
+  } else {
+    let index = strokes.length - 1;
+    while (index >= 0 && strokes[index].page !== pageNum) index--;
+    if (index < 0) return;
+    strokes.splice(index, 1);
+  }
   saveAnot();
   renderPage();
 };
 document.getElementById('wClear').onclick = async () => {
+  if (!strokes.length || !confirm('¿Borrar todas las notas de esta lección? Puedes usar Deshacer inmediatamente después.')) return;
+  clearBackup = structuredClone(strokes);
   strokes = [];
   saveAnot();
   renderPage();
@@ -289,7 +318,7 @@ document.getElementById('wDownload').onclick = async () => {
       if (n > 1) pdf.addPage([v1.width, v1.height]);
       pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, v1.width, v1.height, undefined, 'FAST');
     }
-    const name = 'Leccion ' + parseInt(lnum, 10) + ' - con notas.pdf';
+    const name = lesson.title + ' - con notas.pdf';
     pdf.save(name);
   } finally {
     btn.textContent = 'Guardar PDF';

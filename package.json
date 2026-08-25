@@ -2,8 +2,12 @@
   "name": "cursos-biblicos-web",
   "private": true,
   "version": "1.0.0",
-  "scripts": {},
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check site.js && node --check course.js && node --check admin/admin.js && node --check scripts/import-la-fe-2.js && node --check scripts/verify-release.js && node --check scripts/exercise-release.js && node --check scripts/backup-production.js && node scripts/check-html-modules.js"
+  },
   "dependencies": {
-    "@vercel/blob": "^2.8.0"
+    "@vercel/blob": "2.8.0",
+    "pdfjs-dist": "6.2.108"
   }
 }

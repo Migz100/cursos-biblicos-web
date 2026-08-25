@@ -13,91 +13,17 @@
 <nav><div class="inner">
   <a class="back" href="index.html"><svg width="12" height="20" viewBox="0 0 12 20" fill="none"><path d="M11 1 L2 10 L11 19" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Inicio</a>
   <span class="brand" style="flex:1;text-align:center" id="title"></span>
-  <div class="spacer" style="width:62px"></div>
+  <a class="manageLink" href="admin/">Administrar</a>
 </div></nav>
 <main>
+  <div class="courseCover" id="courseCover" hidden role="img"></div>
   <div class="courseHead">
-    <a class="dlBtn" id="dlCourse" hidden>Descargar curso (ZIP)</a>
-    <a class="dlBtn ghost" id="dlPpt" hidden>Descargar originales (PPTX)</a>
+    <a class="dlBtn" id="dlCourse" hidden></a>
+    <a class="dlBtn ghost" id="dlPpt" hidden>Descargar originales iniciales (PPTX)</a>
+    <p class="archiveNote" id="courseArchiveNote" hidden>Este ZIP conserva la versión inicial. Los cambios nuevos se descargan por lección.</p>
   </div>
   <div class="lessonGroup" id="list"></div>
 </main>
-<script>
-function saveFile(blob, name) {
-  const file = new File([blob], name, { type: blob.type || 'application/octet-stream' });
-  if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-    return navigator.share({ files: [file], title: name });
-  }
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 120000);
-  return Promise.resolve();
-}
-
-async function downloadUrl(url, name, btn) {
-  if (btn.dataset.busy) return;
-  btn.dataset.busy = '1';
-  const label = btn.textContent;
-  btn.textContent = 'Preparando...';
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(resp.status);
-    await saveFile(await resp.blob(), name);
-  } catch (err) {
-    if (err && err.name !== 'AbortError') window.open(url, '_blank');
-  } finally {
-    btn.textContent = label;
-    delete btn.dataset.busy;
-  }
-}
-
-const params = new URLSearchParams(location.search);
-const cid = parseInt(params.get('c') || '1', 10);
-
-async function load() {
-  const d = await (await fetch('data.json')).json();
-  const course = d.courses.find(c => c.id === cid);
-  if (!course) { location.href = 'index.html'; return; }
-  document.title = course.name + ' · Cursos Bíblicos';
-  document.getElementById('title').textContent = course.name;
-  const dlCourse = document.getElementById('dlCourse');
-  if (course.zip) {
-    dlCourse.href = course.zip;
-    dlCourse.hidden = false;
-    dlCourse.onclick = e => { e.preventDefault(); downloadUrl(course.zip, course.name + '.zip', dlCourse); };
-  }
-  const dlPpt = document.getElementById('dlPpt');
-  if (course.pptZip) {
-    dlPpt.href = course.pptZip;
-    dlPpt.hidden = false;
-    dlPpt.onclick = e => { e.preventDefault(); downloadUrl(course.pptZip, course.name + ' - originales.zip', dlPpt); };
-  }
-  const pdfs = await (await fetch('pdfs.json')).json();
-  const keys = Object.keys(pdfs).filter(k => k.startsWith(course.id + '-')).sort();
-  const list = document.getElementById('list');
-  for (const k of keys) {
-    const n = k.split('-')[1];
-    const idx = keys.indexOf(k);
-    const title = course.titles ? course.titles[idx] : null;
-    const label = title ? title : 'Lección ' + parseInt(n, 10);
-    const a = document.createElement('a');
-    a.className = 'row';
-    a.href = 'leer.html?c=' + course.id + '&l=' + n;
-    a.innerHTML = '<div class="num">' + parseInt(n, 10) + '</div><div class="label">' + label + '</div>' +
-      '<button class="dlRow" title="Descargar lección" aria-label="Descargar lección ' + parseInt(n, 10) + '">' +
-      '<svg viewBox="0 0 20 20" fill="none" width="17" height="17"><path d="M10 3v9m0 0l-3.5-3.5M10 12l3.5-3.5M4 16h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
-      '<svg class="chev" viewBox="0 0 9 15" fill="none"><path d="M1 1 L8 7.5 L1 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    const btn = a.querySelector('.dlRow');
-    btn.onclick = e => { e.preventDefault(); e.stopPropagation(); downloadUrl(pdfs[k], label + '.pdf', btn); };
-    list.appendChild(a);
-  }
-}
-load();
-</script>
+<script src="course.js"></script>
 </body>
 </html>
