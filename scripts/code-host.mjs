@@ -560,7 +560,7 @@ async function runOneProvider(id, mode, promptText, sink, workDir) {
 }
 
 async function runCodex(promptText, mode, sink, workDir, local) {
-  const args = ['exec', '--json', '--color', 'never', '--ephemeral'];
+  const args = ['exec', '--json', '--color', 'never', '--ephemeral', '--skip-git-repo-check'];
   if (mode === 'plan') args.push('--sandbox', 'read-only');
   else args.push('--approve-for-me');
   args.push('-C', workDir);
