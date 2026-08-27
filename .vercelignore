@@ -1,3 +1,7 @@
 scripts/
 test/
 /upload*.js
+.code-host/
+.code-host.env
+AGENTS.md
+CODE_CONTEXT.md

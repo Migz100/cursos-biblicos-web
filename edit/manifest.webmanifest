@@ -1,0 +1,18 @@
+{
+  "name": "Editar Cursos Bíblicos",
+  "short_name": "Editar app",
+  "description": "Ayudante privado para cambiar y publicar la app Cursos Bíblicos.",
+  "start_url": "/edit/",
+  "scope": "/edit/",
+  "display": "standalone",
+  "background_color": "#F5F5F7",
+  "theme_color": "#F5F5F7",
+  "icons": [
+    {
+      "src": "editor-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

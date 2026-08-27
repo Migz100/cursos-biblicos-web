@@ -46,7 +46,7 @@ test('forged, missing, and non-PowerPoint viewer requests are rejected', () => {
 
 test('CSP allows only the required upload and presentation service origins', () => {
   const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'vercel.json'), 'utf8'));
-  const csp = config.headers[0].headers.find(header => header.key === 'Content-Security-Policy').value;
+  const csp = config.headers.flatMap(rule => rule.headers || []).find(header => header.key === 'Content-Security-Policy').value;
   assert.match(csp, /connect-src [^;]*https:\/\/vercel\.com(?:[ ;])/);
   assert.match(csp, /frame-src https:\/\/view\.officeapps\.live\.com;/);
   assert.doesNotMatch(csp, /connect-src [^;]*https:\/\/\*(?:[ ;])/);

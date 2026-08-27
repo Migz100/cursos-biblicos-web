@@ -1,0 +1,14 @@
+# Example only. The real file is created outside the repository at:
+# %LOCALAPPDATA%\CursosBiblicosCodeHost\config.env
+CODE_REPO_ROOT=N:\projects\personal\cursos-biblicos-web
+CODE_RELAY_BASE_URL=https://cursos-biblicos-web.vercel.app
+CODE_HOST_TOKEN=replace-me
+CODE_HOST_ID=example
+CODE_EXPECTED_GIT_REMOTE=https://github.com/Migz100/cursos-biblicos-web.git
+CODE_EXPECTED_VERCEL_PROJECT_ID=prj_replace-me
+CODE_EXPECTED_VERCEL_ORG_ID=team_replace-me
+CODE_PROVIDER_ORDER=codex,kimi,local
+CODE_LOCAL_MODEL=qwen3.8:27b-q8_0
+CODE_SUPPORT_LIBRARY=N:\projects\personal\Personal\Cursos Biblicos
+CODE_DISABLE_CLAUDE=
+CODE_DISABLE_FUGU=

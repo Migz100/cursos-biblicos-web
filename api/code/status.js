@@ -1,16 +1,12 @@
 const { allowMethod, sendError, standardHeaders } = require('../_lib/cms/http');
-const { csrfCookie, existingCsrfToken, newCsrfToken } = require('../_lib/cms/security');
 const { requireEditor } = require('../_lib/code/security');
+const { editorStatus } = require('../_lib/code/storage');
 
 module.exports = async function handler(req, res) {
   if (!allowMethod(req, res, ['GET'])) return;
   try {
     requireEditor(req);
-    const token = existingCsrfToken(req) || newCsrfToken();
     standardHeaders(res);
-    res.setHeader('Set-Cookie', csrfCookie(token));
-    res.status(200).json({ csrfToken: token });
-  } catch (error) {
-    sendError(res, error);
-  }
+    res.status(200).json(await editorStatus());
+  } catch (error) { sendError(res, error); }
 };

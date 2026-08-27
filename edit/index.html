@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Editar app">
+<title>Editar app · Cursos Bíblicos</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="editor-icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="edit.css">
+</head>
+<body>
+<div class="accessGate" id="accessGate" hidden>
+  <div class="gateCard">
+    <div class="gateIcon" aria-hidden="true">⌁</div>
+    <h1>Este dispositivo no está conectado</h1>
+    <p>Abre aquí el enlace privado que Miguel te envió. Solo necesitas hacerlo una vez en cada iPhone, iPad o computadora.</p>
+    <a href="../index.html">Volver a Cursos Bíblicos</a>
+  </div>
+</div>
+
+<div class="appShell" id="appShell" hidden>
+  <header class="topbar">
+    <div class="topbarInner">
+      <a class="backLink" href="../admin/" aria-label="Volver a administrar">‹</a>
+      <div class="appIdentity">
+        <span class="appMark" aria-hidden="true">✦</span>
+        <div><strong>Editar app</strong><span>Cursos Bíblicos</span></div>
+      </div>
+      <button class="hostStatus" id="hostStatus" type="button" aria-label="Estado de la computadora">
+        <span class="statusDot"></span><span id="hostStatusText">Conectando…</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="editorMain">
+    <section class="welcome" id="welcome">
+      <span class="eyebrow">Tu ayudante de programación</span>
+      <h1>Dime qué quieres cambiar.</h1>
+      <p>Yo reviso todos los archivos, hago el trabajo y compruebo que la app siga funcionando.</p>
+      <div class="suggestions" aria-label="Ejemplos">
+        <button type="button" data-suggestion="Haz que los títulos de los cursos se vean más grandes en el iPhone.">Títulos más grandes</button>
+        <button type="button" data-suggestion="Agrega una forma sencilla de encontrar una lección por su nombre.">Mejorar la búsqueda</button>
+        <button type="button" data-suggestion="Revisa toda la app y arregla cualquier problema que encuentres en iPhone y iPad.">Revisar la app</button>
+      </div>
+    </section>
+
+    <section class="conversation" id="conversation" aria-live="polite" aria-label="Conversación"></section>
+
+    <section class="computerPanel" id="computerPanel" hidden>
+      <div>
+        <strong id="computerTitle">Computadora desconectada</strong>
+        <p id="computerDetail">Los pedidos quedarán esperando hasta que la computadora de Miguel esté encendida.</p>
+      </div>
+      <div class="providerList" id="providerList"></div>
+    </section>
+
+    <section class="quickActions" aria-label="Acciones de la app">
+      <button type="button" data-action="checks"><span aria-hidden="true">✓</span><span><strong>Comprobar</strong><small>Buscar errores</small></span></button>
+      <button type="button" data-action="preview"><span aria-hidden="true">◉</span><span><strong>Vista previa</strong><small>Abrir antes de publicar</small></span></button>
+      <button type="button" class="publishButton" data-action="publish"><span aria-hidden="true">↑</span><span><strong>Publicar</strong><small>Ponerlo en vivo</small></span></button>
+    </section>
+  </main>
+
+  <footer class="composerWrap">
+    <div class="composer">
+      <textarea id="prompt" rows="1" maxlength="12000" enterkeyhint="send" placeholder="Ejemplo: cambia el color de los botones…" aria-label="Describe el cambio"></textarea>
+      <button class="sendButton" id="sendButton" type="button" aria-label="Enviar instrucción">↑</button>
+    </div>
+    <div class="composerOptions">
+      <label><span>Modo</span><select id="mode"><option value="edit">Hacer el cambio</option><option value="plan">Solo explicarme</option></select></label>
+      <label><span>Ayudante</span><select id="provider"><option value="auto">Automático</option><option value="codex">Codex</option><option value="kimi">Kimi</option><option value="local">Local sin uso</option></select></label>
+      <button id="cancelButton" type="button" hidden>Detener</button>
+    </div>
+    <p class="homeHint">En iPhone o iPad: Compartir → Agregar a pantalla de inicio.</p>
+  </footer>
+</div>
+
+<dialog id="publishDialog">
+  <form method="dialog">
+    <div class="dialogIcon" aria-hidden="true">↑</div>
+    <h2>¿Publicar la app?</h2>
+    <p>Primero se comprobará todo. Si funciona bien, los cambios se pondrán en vivo para todos.</p>
+    <div class="dialogActions"><button value="cancel">Todavía no</button><button class="confirmPublish" value="publish">Sí, publicar</button></div>
+  </form>
+</dialog>
+
+<script src="edit.js"></script>
+</body>
+</html>

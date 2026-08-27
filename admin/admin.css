@@ -9,6 +9,7 @@
 }
 .primaryAction { padding: 11px 17px; background: var(--accent); color: #fff; }
 .secondaryAction { padding: 11px 17px; background: #E9E9EB; color: var(--text); }
+.editAppLink { display: inline-flex; align-items: center; text-decoration: none; background: #E7F1FF; color: #075EBF; }
 .dangerAction { padding: 9px 12px; background: #FFE8E8; color: #B42318; }
 .iconAction { width: 38px; height: 38px; background: #F2F2F7; color: var(--text); font-size: 18px; }
 .iconAction:disabled { opacity: 0.3; cursor: default; }

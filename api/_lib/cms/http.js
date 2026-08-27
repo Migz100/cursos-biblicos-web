@@ -7,7 +7,17 @@ function standardHeaders(res) {
 }
 
 async function readJson(req, maxBytes = 65536) {
-  if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) return req.body;
+  if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+    let serialized;
+    try { serialized = JSON.stringify(req.body); } catch { throw new CmsError(400, 'INVALID_JSON', 'La solicitud no es válida.'); }
+    if (Buffer.byteLength(serialized, 'utf8') > maxBytes) throw new CmsError(413, 'BODY_TOO_LARGE', 'La solicitud es demasiado grande.');
+    return req.body;
+  }
+  if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) {
+    const serialized = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : req.body;
+    if (Buffer.byteLength(serialized, 'utf8') > maxBytes) throw new CmsError(413, 'BODY_TOO_LARGE', 'La solicitud es demasiado grande.');
+    try { return JSON.parse(serialized || '{}'); } catch { throw new CmsError(400, 'INVALID_JSON', 'La solicitud no es válida.'); }
+  }
   let raw = '';
   for await (const chunk of req) {
     raw += chunk;

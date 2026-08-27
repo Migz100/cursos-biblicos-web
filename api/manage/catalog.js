@@ -2,6 +2,7 @@ const { CmsError, applyMutation, assertRevision } = require('../_lib/cms/core');
 const { resolveActionAssets } = require('../_lib/cms/action-assets');
 const { allowMethod, readJson, sendError, standardHeaders } = require('../_lib/cms/http');
 const { requireCsrf } = require('../_lib/cms/security');
+const { requireEditor } = require('../_lib/code/security');
 const { enforceRate, loadManifest, validatedAsset, writeManifest } = require('../_lib/cms/storage');
 
 const VISITOR_LIMIT = { count: 30, bytes: 0, windowMs: 24 * 60 * 60 * 1000 };
@@ -10,6 +11,7 @@ const GLOBAL_LIMIT = { count: 60, bytes: 0, windowMs: 24 * 60 * 60 * 1000 };
 module.exports = async function handler(req, res) {
   if (!allowMethod(req, res, ['POST'])) return;
   try {
+    requireEditor(req);
     requireCsrf(req);
     await enforceRate(req, 'changes', 0, VISITOR_LIMIT, GLOBAL_LIMIT);
     const action = await readJson(req);

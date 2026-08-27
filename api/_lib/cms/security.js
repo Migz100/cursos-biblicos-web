@@ -100,6 +100,7 @@ module.exports = {
   csrfCookie,
   existingCsrfToken,
   newCsrfToken,
+  parseCookies,
   requireCsrf,
   requireSameOrigin,
   signEnvelope,
