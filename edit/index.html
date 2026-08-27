@@ -16,21 +16,19 @@
 <link rel="stylesheet" href="edit.css">
 </head>
 <body>
-<div class="accessGate" id="accessGate" hidden>
-  <div class="gateCard">
-    <div class="gateIcon" aria-hidden="true">⌁</div>
-    <h1>Este dispositivo no está conectado</h1>
+<main class="accessGate" id="accessGate" hidden>
+  <section class="gateCard" aria-labelledby="accessGateTitle">
+    <h1 id="accessGateTitle">Este dispositivo no está conectado</h1>
     <p>Abre aquí el enlace privado que Miguel te envió. Solo necesitas hacerlo una vez en cada iPhone, iPad o computadora.</p>
     <a href="../index.html">Volver a Cursos Bíblicos</a>
-  </div>
-</div>
+  </section>
+</main>
 
 <div class="appShell" id="appShell" hidden>
   <header class="topbar">
     <div class="topbarInner">
-      <a class="backLink" href="../admin/" aria-label="Volver a administrar">‹</a>
+      <a class="backLink" href="../admin/">Administrar</a>
       <div class="appIdentity">
-        <span class="appMark" aria-hidden="true">✦</span>
         <div><strong>Editar app</strong><span>Cursos Bíblicos</span></div>
       </div>
       <button class="hostStatus" id="hostStatus" type="button" aria-label="Estado de la computadora">
@@ -62,16 +60,16 @@
     </section>
 
     <section class="quickActions" aria-label="Acciones de la app">
-      <button type="button" data-action="checks"><span aria-hidden="true">✓</span><span><strong>Comprobar</strong><small>Buscar errores</small></span></button>
-      <button type="button" data-action="preview"><span aria-hidden="true">◉</span><span><strong>Vista previa</strong><small>Abrir antes de publicar</small></span></button>
-      <button type="button" class="publishButton" data-action="publish"><span aria-hidden="true">↑</span><span><strong>Publicar</strong><small>Ponerlo en vivo</small></span></button>
+      <button type="button" data-action="checks"><span><strong>Comprobar</strong><small>Buscar errores</small></span></button>
+      <button type="button" data-action="preview"><span><strong>Vista previa</strong><small>Abrir antes de publicar</small></span></button>
+      <button type="button" class="publishButton" data-action="publish"><span><strong>Publicar</strong><small>Ponerlo en vivo</small></span></button>
     </section>
   </main>
 
   <footer class="composerWrap">
     <div class="composer">
       <textarea id="prompt" rows="1" maxlength="12000" enterkeyhint="send" placeholder="Ejemplo: cambia el color de los botones…" aria-label="Describe el cambio"></textarea>
-      <button class="sendButton" id="sendButton" type="button" aria-label="Enviar instrucción">↑</button>
+      <button class="sendButton" id="sendButton" type="button">Enviar</button>
     </div>
     <div class="composerOptions">
       <label><span>Modo</span><select id="mode" aria-label="Modo de trabajo"><option value="edit">Hacer el cambio</option><option value="plan">Solo explicarme</option></select></label>
@@ -84,7 +82,6 @@
 
 <dialog id="publishDialog">
   <form method="dialog">
-    <div class="dialogIcon" aria-hidden="true">↑</div>
     <h2>¿Publicar la app?</h2>
     <p>Primero se comprobará todo. Si funciona bien, los cambios se pondrán en vivo para todos.</p>
     <div class="dialogActions"><button value="cancel">Todavía no</button><button class="confirmPublish" value="publish">Sí, publicar</button></div>
