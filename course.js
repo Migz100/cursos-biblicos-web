@@ -32,15 +32,17 @@ async function downloadUrl(url, name, button) {
 }
 
 function lessonRow(course, lesson, index) {
-  const row = document.createElement('a');
+  const row = document.createElement('div');
   row.className = 'row';
   const isPresentation = ['ppt', 'pptx', 'ppsx'].includes(lesson.type);
-  row.href = lesson.type === 'pdf'
+  const open = document.createElement('a');
+  open.className = 'rowMain';
+  open.href = lesson.type === 'pdf'
     ? `leer.html?c=${encodeURIComponent(course.id)}&l=${encodeURIComponent(lesson.legacyNumber || lesson.id)}`
     : isPresentation
       ? `presentacion.html?c=${encodeURIComponent(course.id)}&l=${encodeURIComponent(lesson.id)}`
       : lesson.downloadUrl || lesson.url;
-  if (lesson.type !== 'pdf' && !isPresentation) row.target = '_blank';
+  if (lesson.type !== 'pdf' && !isPresentation) open.target = '_blank';
 
   const number = document.createElement('div');
   number.className = 'num';
@@ -57,24 +59,21 @@ function lessonRow(course, lesson, index) {
       : lesson.type.toUpperCase();
   if (lesson.type === 'pages') {
     row.classList.add('needsPdf');
-    row.title = 'Toca para abrir el archivo en Pages. El administrador todavía puede reemplazarlo por PDF.';
+    open.title = 'Toca para abrir el archivo en Pages. El administrador todavía puede reemplazarlo por PDF.';
   }
   const button = document.createElement('button');
   button.className = 'dlRow';
   button.type = 'button';
   button.title = 'Descargar lección';
   button.setAttribute('aria-label', `Descargar ${lesson.title}`);
-  button.textContent = '↓';
+  button.textContent = 'Bajar';
   button.onclick = event => {
     event.preventDefault();
     event.stopPropagation();
     downloadUrl(lesson.downloadUrl || lesson.url, lesson.originalName || `${lesson.title}.${lesson.type}`, button);
   };
-  const chevron = document.createElement('span');
-  chevron.className = 'chevText';
-  chevron.setAttribute('aria-hidden', 'true');
-  chevron.textContent = '›';
-  row.append(number, label, kind, button, chevron);
+  open.append(number, label, kind);
+  row.append(open, button);
   return row;
 }
 
@@ -86,6 +85,7 @@ async function load() {
   if (!course) { location.href = 'index.html'; return; }
   document.title = `${course.name} · Cursos Bíblicos`;
   document.getElementById('title').textContent = course.name;
+  document.getElementById('courseTitle').textContent = course.name;
   if (course.coverUrl) {
     const cover = document.getElementById('courseCover');
     cover.style.backgroundImage = `linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.06)), url("${course.coverUrl}")`;
