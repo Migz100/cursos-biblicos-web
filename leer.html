@@ -34,12 +34,13 @@
     </div>
   </section>
   <main class="pdfArea" id="pdfArea">
-    <div id="pdfBox"></div>
-    <div class="pdfNav">
+    <nav class="pdfNav" aria-label="Navegación entre páginas" hidden>
       <button class="navBtn ghost" id="pgPrev">Página anterior</button>
-      <span class="count" id="pgCount"></span>
+      <span class="count" id="pgCount" aria-live="polite"></span>
       <button class="navBtn ghost" id="pgNext">Página siguiente</button>
-    </div>
+    </nav>
+    <p class="scrollHint" id="scrollHint" hidden>Desliza hacia abajo para ver todas las páginas. También puedes usar los botones.</p>
+    <div id="pdfBox"></div>
   </main>
 </div>
 <script type="module" src="reader.js"></script>

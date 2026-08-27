@@ -13,8 +13,11 @@ let lesson = null;
 let pdfDoc = null;
 let pageNum = 1;
 let zoomFactor = 1;
-let renderTask = null;
+let renderTasks = new Map();
+let renderObserver = null;
 let renderSequence = 0;
+let pageMetrics = [];
+let scrollFrame = null;
 let fieldCatalog = { documents: {} };
 let answerState = { values: {}, fields: {} };
 let clearBackup = null;
@@ -266,28 +269,29 @@ async function annotationFields(page, viewport) {
   });
 }
 
-async function fieldsForPage(page, viewport, canvas) {
+async function fieldsForPage(page, viewport, canvas, pageNumber) {
   const annotations = await annotationFields(page, viewport);
   const fieldDocument = currentFieldDocument();
-  if (fieldDocument && Object.prototype.hasOwnProperty.call(fieldDocument.pages || {}, String(pageNum))) {
-    return mergeFields([...annotations, ...(fieldDocument.pages[String(pageNum)] || [])]);
+  if (fieldDocument && Object.prototype.hasOwnProperty.call(fieldDocument.pages || {}, String(pageNumber))) {
+    return mergeFields([...annotations, ...(fieldDocument.pages[String(pageNumber)] || [])]);
   }
   if (annotations.length) return mergeFields(annotations);
   return mergeFields(detectedCanvasFields(canvas));
 }
 
-function createAnswerLayer(pageElement, fields, viewport) {
+function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
   const layer = document.createElement('div');
   layer.className = 'answerLayer';
   let visibleCount = 0;
   fields.forEach((field, index) => {
-    const id = fieldId(pageNum, field);
-    answerState.fields[id] = { page: pageNum, ...field };
+    const id = fieldId(pageNumber, field);
+    answerState.fields[id] = { page: pageNumber, ...field };
     const input = document.createElement('textarea');
     input.className = `answerField ${field.kind}`;
+    input.dataset.answerId = id;
     input.rows = field.h > 0.055 ? 2 : 1;
     input.value = answerState.values[id] || '';
-    input.setAttribute('aria-label', `Respuesta ${index + 1} de la página ${pageNum}`);
+    input.setAttribute('aria-label', `Respuesta ${index + 1} de la página ${pageNumber}`);
     input.setAttribute('autocomplete', 'off');
     input.setAttribute('spellcheck', 'true');
     input.style.left = `${field.x * 100}%`;
@@ -303,87 +307,238 @@ function createAnswerLayer(pageElement, fields, viewport) {
     visibleCount += 1;
   });
   pageElement.appendChild(layer);
+  pageElement.dataset.fieldCount = String(visibleCount);
   saveAnswers();
+  if (pageNumber === pageNum) updateAnswerHint();
+}
+
+function loadingElement(pageNumber) {
+  const loading = document.createElement('span');
+  loading.className = 'pageLoading';
+  loading.textContent = `Cargando página ${pageNumber}...`;
+  return loading;
+}
+
+function pageElement(metric) {
+  const page = document.createElement('div');
+  page.className = 'pg';
+  page.dataset.pageNumber = String(metric.number);
+  page.dataset.rendered = 'false';
+  page.style.width = `${metric.width}px`;
+  page.style.height = `${metric.height}px`;
+  page.setAttribute('role', 'group');
+  page.setAttribute('aria-label', `Página ${metric.number} de ${pdfDoc.numPages}`);
+  page.appendChild(loadingElement(metric.number));
+  return page;
+}
+
+function cancelRenderTasks() {
+  for (const task of renderTasks.values()) task.cancel();
+  renderTasks = new Map();
+}
+
+function updateAnswerHint() {
   const hint = document.getElementById('answerHint');
+  const current = document.querySelector(`.pg[data-page-number="${pageNum}"]`);
+  if (!current || current.dataset.rendered !== 'true') {
+    hint.textContent = (pdfDoc?.numPages || 1) > 1
+      ? `Página ${pageNum} de ${pdfDoc.numPages}. Desliza hacia abajo para continuar.`
+      : 'Cargando la página...';
+    return;
+  }
+  const visibleCount = Number(current.dataset.fieldCount || 0);
   hint.textContent = visibleCount
     ? `${visibleCount} ${visibleCount === 1 ? 'espacio listo' : 'espacios listos'} para escribir en esta página.`
     : 'Esta página no tiene espacios de respuesta detectados.';
 }
 
-function pageElement() {
-  const page = document.createElement('div');
-  page.className = 'pg';
+async function renderPageElement(element, sequence) {
+  if (!pdfDoc || sequence !== renderSequence || element.dataset.rendered === 'true' || element.dataset.rendering === 'true') return;
+  const pageNumber = Number(element.dataset.pageNumber);
+  const metric = pageMetrics[pageNumber - 1];
+  if (!metric) return;
+  element.dataset.rendering = 'true';
+  const page = await pdfDoc.getPage(pageNumber);
+  if (sequence !== renderSequence || element.dataset.rendering !== 'true') return;
+  const viewport = page.getViewport({ scale: metric.scale });
+  const dpr = Math.min(2.5, window.devicePixelRatio || 1);
   const canvas = document.createElement('canvas');
   canvas.className = 'pdfCanvas';
-  page.appendChild(canvas);
-  return { page, canvas };
-}
-
-async function renderPage({ preserveCenter = false } = {}) {
-  if (!pdfDoc) return;
-  if (renderTask) renderTask.cancel();
-  const sequence = ++renderSequence;
-  const area = document.getElementById('pdfArea');
-  const oldPage = document.querySelector('.pg');
-  const oldWidth = oldPage?.offsetWidth || 1;
-  const centerX = area.scrollLeft + area.clientWidth / 2;
-  const centerY = area.scrollTop + area.clientHeight / 2;
-  const page = await pdfDoc.getPage(pageNum);
-  const baseViewport = page.getViewport({ scale: 1 });
-  const fitWidth = Math.min(1000, Math.max(260, area.clientWidth - 24));
-  const scale = fitWidth / baseViewport.width * zoomFactor;
-  const viewport = page.getViewport({ scale });
-  const dpr = Math.min(2.5, window.devicePixelRatio || 1);
-  const box = document.getElementById('pdfBox');
-  const elements = pageElement();
-  box.replaceChildren(elements.page);
-  elements.canvas.width = Math.ceil(viewport.width * dpr);
-  elements.canvas.height = Math.ceil(viewport.height * dpr);
-  elements.canvas.style.width = `${viewport.width}px`;
-  elements.canvas.style.height = `${viewport.height}px`;
-  elements.page.style.width = `${viewport.width}px`;
-  elements.page.style.height = `${viewport.height}px`;
-  const context = elements.canvas.getContext('2d');
+  canvas.width = Math.ceil(viewport.width * dpr);
+  canvas.height = Math.ceil(viewport.height * dpr);
+  canvas.style.width = `${viewport.width}px`;
+  canvas.style.height = `${viewport.height}px`;
+  canvas.setAttribute('role', 'img');
+  canvas.setAttribute('aria-label', `Contenido de la página ${pageNumber}`);
+  element.replaceChildren(canvas);
+  const context = canvas.getContext('2d');
   context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const task = page.render({ canvasContext: context, viewport });
+  renderTasks.set(pageNumber, task);
   try {
-    renderTask = page.render({ canvasContext: context, viewport });
-    await renderTask.promise;
+    await task.promise;
   } catch (error) {
     if (error?.name === 'RenderingCancelledException') return;
     throw error;
   } finally {
-    renderTask = null;
+    if (renderTasks.get(pageNumber) === task) renderTasks.delete(pageNumber);
   }
-  if (sequence !== renderSequence) return;
-  const fields = await fieldsForPage(page, viewport, elements.canvas);
-  createAnswerLayer(elements.page, fields, viewport);
+  if (sequence !== renderSequence || element.dataset.rendering !== 'true' || !element.isConnected) return;
+  const fields = await fieldsForPage(page, viewport, canvas, pageNumber);
+  if (sequence !== renderSequence || element.dataset.rendering !== 'true' || !element.isConnected) return;
+  createAnswerLayer(element, fields, viewport, pageNumber);
+  element.dataset.rendered = 'true';
+  element.dataset.rendering = 'false';
+  if (Math.abs(pageNumber - pageNum) > 3) {
+    unrenderPageElement(element);
+    return;
+  }
+  if (pageNumber === pageNum) updateAnswerHint();
+}
+
+function unrenderPageElement(element) {
+  if (element.contains(document.activeElement)) return;
+  const pageNumber = Number(element.dataset.pageNumber);
+  renderTasks.get(pageNumber)?.cancel();
+  renderTasks.delete(pageNumber);
+  element.dataset.rendered = 'false';
+  element.dataset.rendering = 'false';
+  delete element.dataset.fieldCount;
+  element.replaceChildren(loadingElement(pageNumber));
+}
+
+function trimDistantPages() {
+  document.querySelectorAll('.pg').forEach(element => {
+    const isLoaded = element.dataset.rendered === 'true' || element.dataset.rendering === 'true';
+    if (Math.abs(Number(element.dataset.pageNumber) - pageNum) > 3 && isLoaded) {
+      unrenderPageElement(element);
+    }
+  });
+}
+
+function renderNearbyPages() {
+  const sequence = renderSequence;
+  document.querySelectorAll('.pg').forEach(element => {
+    if (Math.abs(Number(element.dataset.pageNumber) - pageNum) <= 3) {
+      renderPageElement(element, sequence).catch(() => {});
+    }
+  });
+}
+
+function updateCurrentPageFromScroll() {
+  scrollFrame = null;
+  const area = document.getElementById('pdfArea');
+  const areaRect = area.getBoundingClientRect();
+  const navHeight = document.querySelector('.pdfNav')?.offsetHeight || 0;
+  const targetY = areaRect.top + navHeight + Math.max(80, (areaRect.height - navHeight) * 0.35);
+  let nearest = null;
+  if (area.scrollTop <= 2) {
+    nearest = { element: document.querySelector('.pg'), distance: 0 };
+  } else if (area.scrollTop + area.clientHeight >= area.scrollHeight - 2) {
+    nearest = { element: document.querySelector('.pg:last-child'), distance: 0 };
+  } else {
+    document.querySelectorAll('.pg').forEach(element => {
+      const rect = element.getBoundingClientRect();
+      const distance = targetY < rect.top ? rect.top - targetY : targetY > rect.bottom ? targetY - rect.bottom : 0;
+      if (!nearest || distance < nearest.distance) nearest = { element, distance };
+    });
+  }
+  if (nearest) {
+    const nextPage = Number(nearest.element.dataset.pageNumber);
+    if (nextPage !== pageNum) {
+      pageNum = nextPage;
+      updatePageNavigation();
+      updateAnswerHint();
+    }
+  }
+  trimDistantPages();
+  renderNearbyPages();
+}
+
+function scheduleCurrentPageUpdate() {
+  if (scrollFrame !== null) return;
+  scrollFrame = requestAnimationFrame(updateCurrentPageFromScroll);
+}
+
+function scrollToPage(number, behavior = 'smooth') {
+  if (!pdfDoc) return;
+  pageNum = Math.max(1, Math.min(pdfDoc.numPages, number));
+  const area = document.getElementById('pdfArea');
+  const target = document.querySelector(`.pg[data-page-number="${pageNum}"]`);
+  if (!target) return;
+  const areaRect = area.getBoundingClientRect();
+  const targetTop = target.getBoundingClientRect().top - areaRect.top + area.scrollTop;
+  const navHeight = document.querySelector('.pdfNav')?.offsetHeight || 0;
+  area.scrollTo({ top: Math.max(0, targetTop - navHeight - 8), left: area.scrollLeft, behavior });
   updatePageNavigation();
-  document.getElementById('zoomValue').textContent = `${Math.round(zoomFactor * 100)}%`;
-  if (preserveCenter) {
-    const ratio = viewport.width / oldWidth;
-    area.scrollLeft = Math.max(0, centerX * ratio - area.clientWidth / 2);
-    area.scrollTop = Math.max(0, centerY * ratio - area.clientHeight / 2);
+  updateAnswerHint();
+}
+
+async function buildPageStack({ preservePage = false } = {}) {
+  if (!pdfDoc) return;
+  const area = document.getElementById('pdfArea');
+  const box = document.getElementById('pdfBox');
+  const anchor = preservePage ? document.querySelector(`.pg[data-page-number="${pageNum}"]`) : null;
+  const anchorOffset = anchor ? anchor.getBoundingClientRect().top - area.getBoundingClientRect().top : 0;
+  cancelRenderTasks();
+  renderObserver?.disconnect();
+  const sequence = ++renderSequence;
+  const fitWidth = Math.min(1000, Math.max(260, area.clientWidth - 24));
+  const metrics = await Promise.all(Array.from({ length: pdfDoc.numPages }, async (_, index) => {
+    const number = index + 1;
+    const page = await pdfDoc.getPage(number);
+    const baseViewport = page.getViewport({ scale: 1 });
+    const scale = fitWidth / baseViewport.width * zoomFactor;
+    const viewport = page.getViewport({ scale });
+    return { number, scale, width: viewport.width, height: viewport.height };
+  }));
+  if (sequence !== renderSequence) return;
+  pageMetrics = metrics;
+  const fragment = document.createDocumentFragment();
+  metrics.forEach(metric => fragment.appendChild(pageElement(metric)));
+  box.replaceChildren(fragment);
+  renderObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) renderPageElement(entry.target, sequence).catch(() => {});
+    });
+  }, { root: area, rootMargin: '75% 0px' });
+  box.querySelectorAll('.pg').forEach(element => renderObserver.observe(element));
+  if (preservePage) {
+    const nextAnchor = document.querySelector(`.pg[data-page-number="${pageNum}"]`);
+    if (nextAnchor) {
+      const nextOffset = nextAnchor.getBoundingClientRect().top - area.getBoundingClientRect().top;
+      area.scrollTop += nextOffset - anchorOffset;
+    }
+  } else {
+    area.scrollTop = 0;
+    area.scrollLeft = 0;
   }
   lastAreaWidth = area.clientWidth;
+  updatePageNavigation();
+  updateAnswerHint();
+  scheduleCurrentPageUpdate();
 }
 
 function updatePageNavigation() {
-  document.getElementById('pgCount').textContent = `${pageNum} / ${pdfDoc?.numPages || 1}`;
+  const total = pdfDoc?.numPages || 1;
+  document.getElementById('pgCount').textContent = `${pageNum} de ${total}`;
   document.getElementById('pgPrev').disabled = pageNum <= 1;
   document.getElementById('pgNext').disabled = !pdfDoc || pageNum >= pdfDoc.numPages;
+  document.querySelector('.pdfNav').hidden = total <= 1;
+  document.getElementById('scrollHint').hidden = total <= 1;
   document.getElementById('zoomOut').disabled = zoomFactor <= MIN_ZOOM;
   document.getElementById('zoomIn').disabled = zoomFactor >= MAX_ZOOM;
 }
 
 async function setZoom(value) {
   zoomFactor = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(value * 20) / 20));
-  await renderPage({ preserveCenter: true });
+  await buildPageStack({ preservePage: true });
 }
 
 async function loadPdf(url) {
   pdfDoc = await pdfjsLib.getDocument({ url, isEvalSupported: false }).promise;
   pageNum = 1;
-  await renderPage();
+  await buildPageStack();
 }
 
 function wrapText(context, text, width) {
@@ -462,6 +617,12 @@ async function saveAnsweredPdf() {
   }
 }
 
+function syncVisibleAnswers() {
+  document.querySelectorAll('.answerField[data-answer-id]').forEach(input => {
+    input.value = answerState.values[input.dataset.answerId] || '';
+  });
+}
+
 function clearOrRestoreAnswers() {
   const button = document.getElementById('clearAnswers');
   if (clearBackup) {
@@ -470,7 +631,7 @@ function clearOrRestoreAnswers() {
     clearTimeout(clearTimer);
     button.textContent = 'Borrar respuestas';
     saveAnswers();
-    renderPage().catch(() => {});
+    syncVisibleAnswers();
     return;
   }
   if (!Object.values(answerState.values).some(Boolean)) return;
@@ -478,7 +639,7 @@ function clearOrRestoreAnswers() {
   answerState.values = {};
   saveAnswers();
   button.textContent = 'Deshacer borrado';
-  renderPage().catch(() => {});
+  syncVisibleAnswers();
   clearTimer = setTimeout(() => {
     clearBackup = null;
     button.textContent = 'Borrar respuestas';
@@ -525,22 +686,8 @@ document.getElementById('next').onclick = () => {
   const index = lessons.indexOf(lesson) + 1;
   if (index < lessons.length) location.href = `leer.html?c=${encodeURIComponent(cid)}&l=${encodeURIComponent(lessons[index].legacyNumber || lessons[index].id)}`;
 };
-document.getElementById('pgPrev').onclick = async () => {
-  if (pageNum <= 1) return;
-  pageNum -= 1;
-  await renderPage();
-  const area = document.getElementById('pdfArea');
-  area.scrollTop = 0;
-  area.scrollLeft = 0;
-};
-document.getElementById('pgNext').onclick = async () => {
-  if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
-  pageNum += 1;
-  await renderPage();
-  const area = document.getElementById('pdfArea');
-  area.scrollTop = 0;
-  area.scrollLeft = 0;
-};
+document.getElementById('pgPrev').onclick = () => scrollToPage(pageNum - 1);
+document.getElementById('pgNext').onclick = () => scrollToPage(pageNum + 1);
 document.getElementById('zoomOut').onclick = () => setZoom(zoomFactor - 0.2).catch(() => {});
 document.getElementById('zoomIn').onclick = () => setZoom(zoomFactor + 0.2).catch(() => {});
 document.getElementById('zoomFit').onclick = () => setZoom(1).catch(() => {});
@@ -553,6 +700,7 @@ document.getElementById('pdfArea').addEventListener('wheel', event => {
   event.preventDefault();
   setZoom(zoomFactor + (event.deltaY < 0 ? 0.15 : -0.15)).catch(() => {});
 }, { passive: false });
+document.getElementById('pdfArea').addEventListener('scroll', scheduleCurrentPageUpdate, { passive: true });
 
 let resizeTimer = null;
 window.addEventListener('resize', () => {
@@ -560,7 +708,7 @@ window.addEventListener('resize', () => {
   resizeTimer = setTimeout(() => {
     const area = document.getElementById('pdfArea');
     if (document.activeElement?.classList.contains('answerField')) return;
-    if (Math.abs(area.clientWidth - lastAreaWidth) > 24) renderPage({ preserveCenter: true }).catch(() => {});
+    if (Math.abs(area.clientWidth - lastAreaWidth) > 24) buildPageStack({ preservePage: true }).catch(() => {});
   }, 180);
 });
 
