@@ -560,7 +560,10 @@ async function runOneProvider(id, mode, promptText, sink, workDir) {
 }
 
 async function runCodex(promptText, mode, sink, workDir, local) {
-  const args = ['exec', '--json', '--color', 'never', '--sandbox', mode === 'plan' ? 'read-only' : 'workspace-write', '--approve-for-me', '-C', workDir];
+  const args = ['exec', '--json', '--color', 'never', '--ephemeral'];
+  if (mode === 'plan') args.push('--sandbox', 'read-only');
+  else args.push('--approve-for-me');
+  args.push('-C', workDir);
   if (local) args.push('--oss', '--local-provider', 'ollama', '--model', LOCAL_MODEL);
   args.push('-');
   let answer = '';
