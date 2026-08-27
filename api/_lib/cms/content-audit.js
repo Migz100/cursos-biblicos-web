@@ -1,4 +1,4 @@
-const { CmsError } = require('./core');
+const { CmsError, numericLessonNumber } = require('./core');
 const knownContent = require('./known-content.json');
 
 function cleanUrl(value) {
@@ -90,12 +90,7 @@ function assertUniqueContent(manifest, action) {
 }
 
 function numericOrder(lesson) {
-  const values = [lesson.legacyNumber, lesson.originalName, lesson.title];
-  for (const value of values) {
-    const match = String(value || '').match(/(?:^|lecci[oó]n\s*)(\d{1,3})(?:\D|$)/i);
-    if (match) return Number(match[1]);
-  }
-  return null;
+  return numericLessonNumber(lesson);
 }
 
 function duplicateGroups(records, field, kind) {

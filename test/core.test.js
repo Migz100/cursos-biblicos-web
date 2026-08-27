@@ -7,6 +7,7 @@ const {
   buildStarterManifest,
   fileInfo,
   manifestReferencesPath,
+  migrateKnownLessonOrder,
   namespaceFromEnv,
   totalLessons
 } = require('../api/_lib/cms/core');
@@ -71,6 +72,27 @@ test('course and lesson edits preserve ordering and replacement recovery', () =>
   assert.equal(replacementTrash.item.originalName, 'two.pdf');
   manifest = applyMutation(manifest, { type: 'asset.restore', trashId: replacementTrash.id }).manifest;
   assert.equal(manifest.courses.find(item => item.id === course.id).lessons[0].originalName, 'two.pdf');
+});
+
+test('known production lesson-order mistakes migrate once and preserve later manual ordering', () => {
+  const course = (name, count, order) => ({
+    id: name,
+    name,
+    lessons: order.map(number => ({ id: `${name}-${number}`, title: `Tema ${number}`, originalName: `${String(number).padStart(2, '0')} - tema.pdf` }))
+  });
+  const source = {
+    courses: [
+      course('La Gran Esperanza', 18, [...Array.from({ length: 17 }, (_, index) => index + 2), 1]),
+      course('La Fe de Jesús 2', 30, [2, 1, ...Array.from({ length: 28 }, (_, index) => index + 3)])
+    ]
+  };
+  const migrated = migrateKnownLessonOrder(source);
+  assert.deepEqual(migrated.courses[0].lessons.map(item => item.id), Array.from({ length: 18 }, (_, index) => `La Gran Esperanza-${index + 1}`));
+  assert.deepEqual(migrated.courses[1].lessons.map(item => item.id), Array.from({ length: 30 }, (_, index) => `La Fe de Jesús 2-${index + 1}`));
+  assert.equal(source.courses[0].lessons.at(-1).id, 'La Gran Esperanza-1');
+  [migrated.courses[0].lessons[0], migrated.courses[0].lessons[1]] = [migrated.courses[0].lessons[1], migrated.courses[0].lessons[0]];
+  const rerun = migrateKnownLessonOrder(migrated);
+  assert.equal(rerun.courses[0].lessons[0].id, 'La Gran Esperanza-2');
 });
 
 test('courses accept restorable image covers and an exact lesson order', () => {

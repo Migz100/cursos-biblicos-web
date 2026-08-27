@@ -1,6 +1,6 @@
 const crypto = require('node:crypto');
 const { del, getDownloadUrl, head, issueSignedToken, list, presignUrl, put } = require('@vercel/blob');
-const { CmsError, MAX_HISTORY, buildStarterManifest, manifestReferencesPath, namespaceFromEnv } = require('./core');
+const { CmsError, MAX_HISTORY, buildStarterManifest, manifestReferencesPath, migrateKnownLessonOrder, namespaceFromEnv } = require('./core');
 const { clientKey, signEnvelope, verifyEnvelope } = require('./security');
 const { extractZipEntry, validateMagic, zipEntries } = require('./validation');
 
@@ -38,14 +38,14 @@ async function loadManifest(revision) {
   const blobs = await manifestBlobs();
   if (!blobs.length) {
     if (revision && revision !== 'starter-bundled-v1') throw new CmsError(404, 'REVISION_NOT_FOUND', 'Esa versión ya no está disponible.');
-    return buildStarterManifest();
+    return migrateKnownLessonOrder(buildStarterManifest());
   }
   let blob = blobs[0];
   if (revision) {
     blob = blobs.find(item => item.pathname.endsWith(`/${revision}.json`));
     if (!blob) throw new CmsError(404, 'REVISION_NOT_FOUND', 'Esa versión ya no está disponible.');
   }
-  return fetchJson(blob.url);
+  return migrateKnownLessonOrder(await fetchJson(blob.url));
 }
 
 function lockName(revision) {

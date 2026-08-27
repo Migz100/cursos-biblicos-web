@@ -225,6 +225,41 @@ function moveItem(items, id, toIndex) {
   items.splice(target, 0, item);
 }
 
+function numericLessonNumber(lesson) {
+  for (const value of [lesson?.legacyNumber, lesson?.originalName, lesson?.title]) {
+    const match = String(value || '').match(/(?:^|lecci[oó]n\s*)(\d{1,3})(?:\D|$)/i);
+    if (match) return Number(match[1]);
+  }
+  return null;
+}
+
+function migrateKnownLessonOrder(input) {
+  const manifest = structuredClone(input);
+  const migration = 'known-lesson-order-2026-08-27';
+  const completed = Array.isArray(manifest.migrations) ? manifest.migrations : [];
+  if (completed.includes(migration)) return manifest;
+  const targets = new Map([
+    ['La Gran Esperanza', 18],
+    ['La Fe de Jesús 2', 30]
+  ]);
+  for (const course of manifest.courses || []) {
+    const expected = targets.get(course.name);
+    if (!expected || course.lessons?.length !== expected) continue;
+    const numbered = course.lessons.map((lesson, index) => ({ lesson, index, number: numericLessonNumber(lesson) }));
+    const values = numbered.map(item => item.number);
+    const completeSequence = values.every(Number.isInteger) &&
+      new Set(values).size === expected &&
+      values.every(number => number >= 1 && number <= expected);
+    if (completeSequence) {
+      course.lessons = numbered
+        .sort((a, b) => a.number - b.number || a.index - b.index)
+        .map(item => item.lesson);
+    }
+  }
+  manifest.migrations = [...completed, migration];
+  return manifest;
+}
+
 function addTrash(manifest, entry) {
   if (manifest.trash.length >= MAX_TRASH) {
     throw new CmsError(409, 'TRASH_FULL', 'La papelera está llena. Restaura algo antes de quitar más contenido.');
@@ -498,6 +533,8 @@ module.exports = {
   cleanText,
   fileInfo,
   manifestReferencesPath,
+  migrateKnownLessonOrder,
   namespaceFromEnv,
+  numericLessonNumber,
   totalLessons
 };
