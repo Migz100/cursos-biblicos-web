@@ -81,7 +81,7 @@ button { -webkit-user-select: none; user-select: none; }
 .composer, .composerOptions, .homeHint { width: min(100%, 790px); margin-left: auto; margin-right: auto; }
 .composer { min-height: 55px; padding: 7px 7px 7px 16px; display: flex; align-items: flex-end; gap: 8px; border: 1px solid rgba(0,0,0,.12); border-radius: 23px; background: #fff; box-shadow: 0 8px 32px rgba(0,0,0,.10); }
 .composer textarea { width: 100%; max-height: 150px; padding: 9px 0; resize: none; border: 0; outline: 0; background: transparent; color: var(--editor-ink); font-size: 16px; line-height: 1.35; }
-.sendButton { width: 41px; height: 41px; display: grid; place-items: center; flex: 0 0 auto; border: 0; border-radius: 50%; background: var(--editor-blue); color: #fff; cursor: pointer; font-size: 23px; font-weight: 700; }
+.sendButton { width: 44px; height: 44px; display: grid; place-items: center; flex: 0 0 auto; border: 0; border-radius: 50%; background: var(--editor-blue); color: #fff; cursor: pointer; font-size: 23px; font-weight: 700; }
 .sendButton:disabled { background: #C7C7CC; }
 .composerOptions { padding: 7px 5px 0; display: flex; align-items: center; gap: 12px; }
 .composerOptions label { display: flex; align-items: center; gap: 5px; color: var(--editor-muted); font-size: 11px; }
