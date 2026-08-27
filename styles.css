@@ -172,7 +172,7 @@ input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; }
 .zoomValue { min-width: 48px; color: var(--text2); font-size: 13px; font-weight: 650; text-align: center; }
 .answerHint { min-width: 210px; color: var(--text2); font-size: 12px; text-align: right; }
 .pdfArea {
-  flex: 1; overflow: auto; padding: 12px 12px 40px; background: #E5E5EA;
+  width: 100%; max-width: none; flex: 1; overflow: auto; margin: 0; padding: 12px 12px 40px; background: #E5E5EA;
   overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scroll-padding-top: 76px;
 }
 .pdfArea #pdfBox { display: flex; flex-direction: column; align-items: center; min-width: max-content; gap: 18px; }
