@@ -12,6 +12,23 @@ $TaskName = 'Cursos Biblicos Code Host'
 
 if (-not $RuntimeRoot.StartsWith($ExpectedRoot, [System.StringComparison]::OrdinalIgnoreCase)) { throw 'Runtime path escaped the private host directory.' }
 if (-not (Test-Path -LiteralPath $ConfigPath)) { throw 'Run npm run code-host:setup before installing the background host.' }
+$ExistingTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+if ($ExistingTask -and $ExistingTask.State -eq 'Running') {
+  Stop-ScheduledTask -TaskName $TaskName
+  $StopDeadline = [DateTime]::UtcNow.AddSeconds(20)
+  do {
+    Start-Sleep -Milliseconds 250
+    $ExistingTask = Get-ScheduledTask -TaskName $TaskName
+  } while ($ExistingTask.State -eq 'Running' -and [DateTime]::UtcNow -lt $StopDeadline)
+  if ($ExistingTask.State -eq 'Running') { throw 'The existing code host did not stop before the update.' }
+}
+$InstalledHostScript = [System.IO.Path]::GetFullPath((Join-Path $RuntimeRoot 'code-host.mjs'))
+$OrphanedHosts = Get-CimInstance Win32_Process | Where-Object {
+  $_.Name -eq 'node.exe' -and $_.CommandLine -and $_.CommandLine.IndexOf($InstalledHostScript, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+}
+foreach ($HostProcess in $OrphanedHosts) {
+  Stop-Process -Id $HostProcess.ProcessId -Force
+}
 New-Item -ItemType Directory -Path $RuntimeRoot -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'code-host.mjs') -Destination (Join-Path $RuntimeRoot 'code-host.mjs') -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'start-code-host.ps1') -Destination (Join-Path $RuntimeRoot 'start-code-host.ps1') -Force
