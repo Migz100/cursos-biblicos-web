@@ -1,5 +1,6 @@
 const { CmsError, applyMutation, assertRevision } = require('../_lib/cms/core');
 const { resolveActionAssets } = require('../_lib/cms/action-assets');
+const { assertUniqueContent } = require('../_lib/cms/content-audit');
 const { allowMethod, readJson, sendError, standardHeaders } = require('../_lib/cms/http');
 const { requireCsrf } = require('../_lib/cms/security');
 const { requireEditor } = require('../_lib/code/security');
@@ -30,6 +31,7 @@ module.exports = async function handler(req, res) {
       label = `Catálogo restaurado a la versión del ${next.updatedAt ? new Date(next.updatedAt).toLocaleString('es') : 'catálogo original'}`;
     } else {
       const safeAction = resolveActionAssets(action, validatedAsset);
+      assertUniqueContent(current, safeAction);
       const result = applyMutation(current, safeAction);
       next = result.manifest;
       label = result.label;

@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
     const body = await readJson(req, 16384);
     let result;
     if (body.action === 'prepare') {
-      const info = fileInfo(body.filename, body.contentType, body.size);
+      const info = fileInfo(body.filename, body.contentType, body.size, body.kind === 'cover' ? 'cover' : 'lesson');
       await enforceRate(req, 'uploads', info.size, VISITOR_UPLOAD_LIMIT, GLOBAL_UPLOAD_LIMIT);
       result = await prepareUpload(info);
     } else if (body.action === 'finalize') {

@@ -20,7 +20,8 @@
     <button class="primaryAction" id="addCourse" type="button">Agregar curso</button>
     <button class="secondaryAction" id="openTrash" type="button">Papelera</button>
     <button class="secondaryAction" id="openHistory" type="button">Historial</button>
-    <a class="secondaryAction editAppLink" href="../edit/">✦ Editar app con IA</a>
+    <button class="secondaryAction" id="openAudit" type="button">Revisar contenido</button>
+    <a class="secondaryAction editAppLink" href="../edit/">Editar app con IA</a>
   </div>
   <p class="status" id="status" role="status">Cargando catálogo...</p>
   <div id="courseManager"></div>
@@ -34,8 +35,13 @@
     <label>Iniciales<input id="courseShort" required maxlength="5" autocomplete="off" placeholder="Ejemplo: LF"></label>
     <label>Sección<select id="courseSection"><option value="cursos">Cursos Bíblicos</option><option value="lafe">La Fe de Jesús (PowerPoint)</option></select></label>
     <label>Color<input id="courseColor" type="color" value="#0071E3"></label>
-    <label id="courseFilesLabel">Lecciones para este curso (opcional)<input id="courseFiles" type="file" multiple accept=".pdf,.ppt,.pptx,.ppsx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.presentationml.slideshow"></label>
-    <p class="formHint">Puedes elegir archivos desde Files en iPhone o desde tu computadora. Máximo 25 MB por archivo.</p>
+    <label>Foto o portada del curso (opcional)<input id="courseCover" type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"></label>
+    <div class="coverPreview" id="coverPreview" hidden>
+      <img id="coverPreviewImage" alt="Vista previa de la portada">
+      <button class="dangerAction" id="removeCover" type="button">Quitar portada</button>
+    </div>
+    <label id="courseFilesLabel">Lecciones para este curso (opcional)<input id="courseFiles" type="file" multiple accept=".pdf,.pages,.ppt,.pptx,.ppsx,application/pdf,application/vnd.apple.pages,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.presentationml.slideshow"></label>
+    <p class="formHint">En iPhone o iPad puedes elegir una foto desde Fotos y lecciones desde Archivos. Se aceptan PDF, Apple Pages y PowerPoint, hasta 25 MB por archivo. Si Pages incluye un PDF interno, se convierte automáticamente; el original siempre se conserva.</p>
     <div class="dialogActions"><button type="button" class="secondaryAction" data-close="courseDialog">Cancelar</button><button class="primaryAction" id="saveCourse" type="submit">Guardar</button></div>
   </form>
 </dialog>

@@ -2,7 +2,7 @@ const crypto = require('node:crypto');
 const { del, getDownloadUrl, head, issueSignedToken, list, presignUrl, put } = require('@vercel/blob');
 const { CmsError, MAX_HISTORY, buildStarterManifest, manifestReferencesPath, namespaceFromEnv } = require('./core');
 const { clientKey, signEnvelope, verifyEnvelope } = require('./security');
-const { validateMagic } = require('./validation');
+const { extractZipEntry, validateMagic, zipEntries } = require('./validation');
 
 function namespace() {
   return namespaceFromEnv();
@@ -284,7 +284,8 @@ async function prepareUpload(info) {
     contentType: info.contentType,
     size: info.size,
     originalName: info.originalName,
-    suggestedTitle: info.suggestedTitle
+    suggestedTitle: info.suggestedTitle,
+    kind: info.kind
   }, 10 * 60 * 1000);
   await put(pendingPath, JSON.stringify({ pathname, expiresAt: validUntil + 5 * 60 * 1000 }), {
     access: 'public',
@@ -300,6 +301,99 @@ async function readRange(url, start, end) {
   const response = await fetch(url, { headers: { Range: `bytes=${start}-${end}` }, cache: 'no-store' });
   if (!response.ok && response.status !== 206) throw new Error('Unable to inspect uploaded file');
   return Buffer.from(await response.arrayBuffer());
+}
+
+async function readWhole(url) {
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) throw new Error('Unable to inspect uploaded file');
+  return Buffer.from(await response.arrayBuffer());
+}
+
+function sha256(buffer) {
+  return crypto.createHash('sha256').update(buffer).digest('hex');
+}
+
+function decodeXml(value) {
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'");
+}
+
+function normalizedContent(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 2_000_000);
+}
+
+async function textFromPdf(buffer) {
+  let loadingTask;
+  try {
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    loadingTask = pdfjs.getDocument({
+      data: new Uint8Array(buffer),
+      disableWorker: true,
+      isEvalSupported: false,
+      verbosity: 0
+    });
+    const document = await loadingTask.promise;
+    const pages = [];
+    for (let number = 1; number <= document.numPages; number += 1) {
+      const page = await document.getPage(number);
+      const content = await page.getTextContent();
+      pages.push(content.items.map(item => item.str || '').join(' '));
+    }
+    return pages.join(' ');
+  } catch {
+    return '';
+  } finally {
+    try { await loadingTask?.destroy(); } catch {}
+  }
+}
+
+function textFromPresentation(buffer) {
+  const slides = zipEntries(buffer)
+    .filter(entry => /^ppt\/slides\/slide\d+\.xml$/i.test(entry.name))
+    .sort((a, b) => Number(a.name.match(/\d+/)?.[0]) - Number(b.name.match(/\d+/)?.[0]));
+  const text = [];
+  for (const slide of slides) {
+    const xml = extractZipEntry(buffer, slide.name, 8 * 1024 * 1024);
+    if (xml) text.push(decodeXml(xml.toString('utf8')));
+  }
+  return text.join(' ');
+}
+
+async function contentFingerprint(type, buffer) {
+  let text = '';
+  if (type === 'pdf') text = await textFromPdf(buffer);
+  if (type === 'pptx' || type === 'ppsx') text = textFromPresentation(buffer);
+  const normalized = normalizedContent(text);
+  if (normalized.length < 80) return { contentHash: null, contentCharacters: normalized.length };
+  return {
+    contentHash: crypto.createHash('sha256').update(normalized).digest('hex'),
+    contentCharacters: normalized.length
+  };
+}
+
+function embeddedPagesPdf(buffer) {
+  const candidates = ['QuickLook/Preview.pdf', 'Preview.pdf', 'preview.pdf'];
+  for (const name of candidates) {
+    const preview = extractZipEntry(buffer, name, 40 * 1024 * 1024);
+    if (!preview) continue;
+    try {
+      validateMagic('pdf', preview.subarray(0, Math.min(preview.length, 262144)), preview.subarray(Math.max(0, preview.length - 4 * 1024 * 1024)));
+      return preview;
+    } catch {}
+  }
+  return null;
 }
 
 async function finalizeUpload(receipt) {
@@ -325,34 +419,76 @@ async function finalizeUpload(receipt) {
       await del([pending.pathname, pending.pendingPath]).catch(() => {});
       throw new CmsError(400, 'INVALID_FILE_SIZE', 'El archivo subido no coincide con lo esperado.');
     }
-    const inspectWholeFile = pending.extension === 'ppt';
-    const headBytes = await readRange(metadata.url, 0, inspectWholeFile ? metadata.size - 1 : Math.min(metadata.size - 1, 262143));
-    const tailStart = inspectWholeFile ? 0 : Math.max(0, metadata.size - 4 * 1024 * 1024);
-    const tailBytes = tailStart
-      ? await readRange(metadata.url, tailStart, metadata.size - 1)
-      : metadata.size <= headBytes.length
-        ? headBytes
-        : await readRange(metadata.url, 0, metadata.size - 1);
+    const whole = await readWhole(metadata.url);
+    const headBytes = whole.subarray(0, Math.min(whole.length, 262143));
+    const tailBytes = whole.subarray(Math.max(0, whole.length - 4 * 1024 * 1024));
     try {
       validateMagic(pending.extension, headBytes, tailBytes);
     } catch (error) {
       await del([pending.pathname, pending.pendingPath]).catch(() => {});
       throw error;
     }
+    const sourceSha256 = sha256(whole);
+    let mainType = pending.extension;
+    let mainUrl = metadata.url;
+    let mainPathname = pending.pathname;
+    let mainSize = metadata.size;
+    let mainOriginalName = pending.originalName;
+    let source = null;
+    let conversionStatus = null;
+    let fingerprintBuffer = whole;
+    if (pending.extension === 'pages') {
+      const preview = embeddedPagesPdf(whole);
+      if (preview) {
+        const derivedPathname = pending.pathname.replace(/\.pages$/i, '') + '-pages-preview.pdf';
+        const derived = await put(derivedPathname, preview, {
+          access: 'public',
+          addRandomSuffix: false,
+          allowOverwrite: false,
+          contentType: 'application/pdf',
+          cacheControlMaxAge: 31536000
+        });
+        mainType = 'pdf';
+        mainUrl = derived.url;
+        mainPathname = derived.pathname;
+        mainSize = preview.length;
+        mainOriginalName = pending.originalName.replace(/\.pages$/i, '.pdf');
+        fingerprintBuffer = preview;
+        conversionStatus = 'embedded-pdf';
+        source = {
+          sourceType: 'pages',
+          sourceUrl: metadata.url,
+          sourceDownloadUrl: getDownloadUrl(metadata.url),
+          sourceOriginalName: pending.originalName,
+          sourcePathname: pending.pathname,
+          sourceSize: metadata.size,
+          sourceSha256
+        };
+      } else {
+        conversionStatus = 'needs-pdf';
+      }
+    }
+    const fingerprint = await contentFingerprint(mainType, fingerprintBuffer);
     await del(pending.pendingPath).catch(() => {});
     const asset = {
       validated: true,
-      type: pending.extension,
-      url: metadata.url,
-      downloadUrl: getDownloadUrl(metadata.url),
-      originalName: pending.originalName,
-      pathname: pending.pathname,
-      size: metadata.size
+      type: mainType,
+      url: mainUrl,
+      downloadUrl: getDownloadUrl(mainUrl),
+      originalName: mainOriginalName,
+      pathname: mainPathname,
+      size: mainSize,
+      sha256: sha256(fingerprintBuffer),
+      ...fingerprint,
+      ...(conversionStatus ? { conversionStatus } : {}),
+      ...(source || {})
     };
     return {
       assetToken: signEnvelope('validated-asset', asset, 30 * 60 * 1000),
       suggestedTitle: pending.suggestedTitle,
-      originalName: pending.originalName
+      originalName: pending.originalName,
+      type: asset.type,
+      conversionStatus: asset.conversionStatus || null
     };
   } finally {
     await releaseEphemeralLock(finalizeLockPath, finalizeLock);
@@ -370,13 +506,16 @@ function validatedAsset(token) {
 async function discardUpload(token) {
   const asset = validatedAsset(token);
   const manifest = await loadManifest();
-  if (manifestReferencesPath(manifest, asset.pathname)) {
+  const paths = [asset.pathname, asset.sourcePathname].filter(Boolean);
+  if (paths.some(pathname => manifestReferencesPath(manifest, pathname))) {
     throw new CmsError(409, 'ASSET_IN_USE', 'El archivo ya pertenece al catálogo y no se puede descartar.');
   }
-  await del(asset.pathname);
-  let exists = true;
-  try { await head(asset.pathname); } catch { exists = false; }
-  if (exists) throw new CmsError(500, 'DISCARD_FAILED', 'No se pudo descartar el archivo sin usar.');
+  await del(paths);
+  for (const pathname of paths) {
+    let exists = true;
+    try { await head(pathname); } catch { exists = false; }
+    if (exists) throw new CmsError(500, 'DISCARD_FAILED', 'No se pudo descartar el archivo sin usar.');
+  }
   return { discarded: true };
 }
 

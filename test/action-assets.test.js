@@ -42,3 +42,14 @@ test('whole-course replacements resolve every asset from a signed token', () => 
     { title: 'Dos', asset: { validated: true, pathname: 'cms/assets/two' } }
   ]);
 });
+
+test('course covers are resolved only from their signed upload token', () => {
+  const forged = { url: 'https://attacker.invalid/cover.jpg' };
+  const safe = resolveActionAssets({
+    type: 'course.update',
+    coverAsset: forged,
+    coverAssetToken: 'cover-token'
+  }, token => ({ validated: true, pathname: `cms/assets/${token}` }));
+  assert.deepEqual(safe.coverAsset, { validated: true, pathname: 'cms/assets/cover-token' });
+  assert.notEqual(safe.coverAsset, forged);
+});

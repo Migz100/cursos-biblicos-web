@@ -13,7 +13,20 @@ const FILE_TYPES = Object.freeze({
   pdf: 'application/pdf',
   ppt: 'application/vnd.ms-powerpoint',
   pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  ppsx: 'application/vnd.openxmlformats-officedocument.presentationml.slideshow'
+  ppsx: 'application/vnd.openxmlformats-officedocument.presentationml.slideshow',
+  pages: 'application/vnd.apple.pages',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp'
+});
+
+const LESSON_TYPES = new Set(['pdf', 'ppt', 'pptx', 'ppsx', 'pages']);
+const COVER_TYPES = new Set(['jpg', 'jpeg', 'png', 'webp']);
+const CONTENT_TYPE_ALIASES = Object.freeze({
+  pages: new Set(['application/vnd.apple.pages', 'application/x-iwork-pages-sffpages', 'application/zip']),
+  jpg: new Set(['image/jpeg', 'image/jpg']),
+  jpeg: new Set(['image/jpeg', 'image/jpg'])
 });
 
 class CmsError extends Error {
@@ -56,18 +69,30 @@ function cleanSection(value) {
   return value;
 }
 
-function fileInfo(filename, declaredType, declaredSize) {
+function fileInfo(filename, declaredType, declaredSize, kind = 'lesson') {
   if (typeof filename !== 'string') throw new CmsError(400, 'INVALID_FILE', 'El archivo no es válido.');
   const base = path.basename(filename.normalize('NFC')).replace(/[\u0000-\u001F\u007F]/g, '').trim();
   const match = base.match(/\.([A-Za-z0-9]+)$/);
   const extension = match ? match[1].toLowerCase() : '';
   const contentType = FILE_TYPES[extension];
   const size = Number(declaredSize);
-  if (!contentType) throw new CmsError(400, 'INVALID_FILE_TYPE', 'Solo se aceptan archivos PDF, PPT, PPTX o PPSX.');
+  const allowed = kind === 'cover' ? COVER_TYPES : LESSON_TYPES;
+  if (!contentType || !allowed.has(extension)) {
+    const message = kind === 'cover'
+      ? 'La portada debe ser una imagen JPG, PNG o WebP.'
+      : 'Solo se aceptan archivos PDF, Pages, PPT, PPTX o PPSX.';
+    throw new CmsError(400, 'INVALID_FILE_TYPE', message);
+  }
   if (!Number.isSafeInteger(size) || size < 1 || size > MAX_FILE_BYTES) {
     throw new CmsError(400, 'INVALID_FILE_SIZE', 'El archivo debe pesar 25 MB o menos.');
   }
-  if (declaredType && declaredType !== 'application/octet-stream' && declaredType !== contentType) {
+  const aliases = CONTENT_TYPE_ALIASES[extension];
+  if (
+    declaredType &&
+    declaredType !== 'application/octet-stream' &&
+    declaredType !== contentType &&
+    !aliases?.has(declaredType)
+  ) {
     throw new CmsError(400, 'INVALID_FILE_TYPE', 'El tipo del archivo no coincide con su extensión.');
   }
   const stem = base.slice(0, -(extension.length + 1));
@@ -84,7 +109,8 @@ function fileInfo(filename, declaredType, declaredSize) {
     size,
     originalName: cleanText(base, 140, 'El nombre del archivo'),
     safeName: `${safeStem}.${extension}`,
-    suggestedTitle: cleanText(stem.replace(/^\s*\d+[\s._-]*/, ''), 100, 'El título')
+    suggestedTitle: cleanText(stem.replace(/^\s*\d+[\s._-]*/, ''), 100, 'El título'),
+    kind
   };
 }
 
@@ -207,14 +233,15 @@ function addTrash(manifest, entry) {
   return manifest.trash[0];
 }
 
-function requireAsset(asset) {
+function requireAsset(asset, kind = 'lesson') {
   if (!asset || typeof asset !== 'object' || !asset.validated) {
     throw new CmsError(400, 'INVALID_ASSET', 'El archivo no fue validado.');
   }
-  if (!FILE_TYPES[asset.type] || !asset.url || !asset.downloadUrl || !asset.pathname) {
+  const allowed = kind === 'cover' ? COVER_TYPES : LESSON_TYPES;
+  if (!FILE_TYPES[asset.type] || !allowed.has(asset.type) || !asset.url || !asset.downloadUrl || !asset.pathname) {
     throw new CmsError(400, 'INVALID_ASSET', 'El archivo no fue validado.');
   }
-  return {
+  const safe = {
     type: asset.type,
     url: asset.url,
     downloadUrl: asset.downloadUrl,
@@ -223,6 +250,20 @@ function requireAsset(asset) {
     size: Number(asset.size),
     managed: true
   };
+  for (const field of [
+    'sha256', 'contentHash', 'contentCharacters', 'conversionStatus',
+    'sourceType', 'sourceUrl', 'sourceDownloadUrl', 'sourceOriginalName',
+    'sourcePathname', 'sourceSize', 'sourceSha256'
+  ]) {
+    if (asset[field] !== undefined && asset[field] !== null) safe[field] = asset[field];
+  }
+  return safe;
+}
+
+function applyCover(course, asset) {
+  const cover = requireAsset(asset, 'cover');
+  course.cover = cover;
+  course.coverUrl = cover.url;
 }
 
 function applyMutation(input, action) {
@@ -250,6 +291,7 @@ function applyMutation(input, action) {
         source: 'visitor',
         managed: true,
         coverUrl: builtInCover,
+        cover: null,
         zip: null,
         zipKind: null,
         pptZip: null,
@@ -260,6 +302,7 @@ function applyMutation(input, action) {
           ...requireAsset(item.asset)
         }))
       };
+      if (action.coverAsset) applyCover(course, action.coverAsset);
       manifest.courses.push(course);
       label = `Curso agregado: ${course.name}`;
       break;
@@ -270,6 +313,14 @@ function applyMutation(input, action) {
       course.short = cleanShort(action.short);
       course.color = cleanColor(action.color);
       course.section = cleanSection(action.section);
+      if (action.removeCover) {
+        if (course.cover) addTrash(manifest, { kind: 'replaced_cover', courseId: course.id, item: course.cover });
+        course.cover = null;
+        course.coverUrl = null;
+      } else if (action.coverAsset) {
+        if (course.cover) addTrash(manifest, { kind: 'replaced_cover', courseId: course.id, item: course.cover });
+        applyCover(course, action.coverAsset);
+      }
       label = `Curso editado: ${course.name}`;
       break;
     }
@@ -303,7 +354,6 @@ function applyMutation(input, action) {
       const index = manifest.courses.findIndex(item => item.id === String(action.courseId));
       if (index < 0) throw new CmsError(404, 'COURSE_NOT_FOUND', 'El curso ya no existe.');
       const course = manifest.courses[index];
-      if (action.confirmText !== course.name) throw new CmsError(400, 'CONFIRMATION_REQUIRED', 'Escribe el nombre exacto del curso para quitarlo.');
       manifest.courses.splice(index, 1);
       const trash = addTrash(manifest, { kind: 'course', index, item: course });
       undoTrashId = trash.id;
@@ -368,7 +418,6 @@ function applyMutation(input, action) {
       const index = course.lessons.findIndex(item => item.id === String(action.lessonId));
       if (index < 0) throw new CmsError(404, 'LESSON_NOT_FOUND', 'La lección ya no existe.');
       const lesson = course.lessons[index];
-      if (action.confirmText !== lesson.title) throw new CmsError(400, 'CONFIRMATION_REQUIRED', 'Escribe el título exacto de la lección para quitarla.');
       course.lessons.splice(index, 1);
       const trash = addTrash(manifest, { kind: 'lesson', courseId: course.id, index, item: lesson });
       undoTrashId = trash.id;
@@ -400,6 +449,35 @@ function applyMutation(input, action) {
       manifest.trash.splice(trashIndex, 1);
       addTrash(manifest, { kind: 'replaced_asset', courseId: course.id, lessonId: lesson.id, item: current });
       label = `Archivo anterior restaurado: ${lesson.title}`;
+      break;
+    }
+    case 'course.reorderLessons': {
+      const course = findCourse(manifest, action.courseId);
+      const requested = Array.isArray(action.lessonIds) ? action.lessonIds.map(String) : [];
+      const currentIds = course.lessons.map(item => String(item.id));
+      if (
+        requested.length !== currentIds.length ||
+        new Set(requested).size !== requested.length ||
+        requested.some(id => !currentIds.includes(id))
+      ) {
+        throw new CmsError(400, 'INVALID_ORDER', 'El nuevo orden no es válido.');
+      }
+      const byId = new Map(course.lessons.map(item => [String(item.id), item]));
+      course.lessons = requested.map(id => byId.get(id));
+      label = `Lecciones ordenadas en ${course.name}`;
+      break;
+    }
+    case 'cover.restore': {
+      const trashIndex = manifest.trash.findIndex(item => item.id === String(action.trashId) && item.kind === 'replaced_cover');
+      if (trashIndex < 0) throw new CmsError(404, 'TRASH_NOT_FOUND', 'Esa portada ya no está en la papelera.');
+      const entry = manifest.trash[trashIndex];
+      const course = findCourse(manifest, entry.courseId);
+      const currentCover = course.cover;
+      manifest.trash.splice(trashIndex, 1);
+      course.cover = entry.item;
+      course.coverUrl = entry.item.url;
+      if (currentCover) addTrash(manifest, { kind: 'replaced_cover', courseId: course.id, item: currentCover });
+      label = `Portada anterior restaurada: ${course.name}`;
       break;
     }
     default:

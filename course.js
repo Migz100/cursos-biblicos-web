@@ -50,7 +50,15 @@ function lessonRow(course, lesson, index) {
   label.textContent = lesson.title;
   const kind = document.createElement('span');
   kind.className = 'fileKind';
-  kind.textContent = lesson.type.toUpperCase();
+  kind.textContent = lesson.sourceType === 'pages'
+    ? 'PDF + PAGES'
+    : lesson.type === 'pages'
+      ? 'PAGES'
+      : lesson.type.toUpperCase();
+  if (lesson.type === 'pages') {
+    row.classList.add('needsPdf');
+    row.title = 'Toca para abrir el archivo en Pages. El administrador todavía puede reemplazarlo por PDF.';
+  }
   const button = document.createElement('button');
   button.className = 'dlRow';
   button.type = 'button';

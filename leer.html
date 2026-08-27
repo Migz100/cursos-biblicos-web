@@ -12,319 +12,36 @@
 </head>
 <body>
 <div class="reader">
-  <div class="readerNav">
+  <nav class="readerNav" aria-label="Navegación de la lección">
     <button class="navBtn ghost" id="back">Cursos</button>
     <div class="title" id="title"></div>
     <span class="count" id="count"></span>
-    <button class="navBtn" id="prev">&larr; Prev</button>
-    <button class="navBtn" id="next">Sig &rarr;</button>
-  </div>
-  <div class="writeTools" id="writeTools" style="display:none">
-    <button class="wBtn" id="wPen" title="Escribir">Escribir</button>
-    <button class="wBtn" id="wUndo" title="Deshacer">Deshacer</button>
-    <button class="wBtn" id="wClear" title="Borrar todo">Borrar todo</button>
-    <button class="wBtn" id="wDownload" title="Descargar PDF con notas">Guardar PDF</button>
-  </div>
-  <div class="pdfArea">
+    <button class="navBtn" id="prev">Anterior</button>
+    <button class="navBtn" id="next">Siguiente</button>
+  </nav>
+  <section class="answerTools" id="answerTools" aria-label="Herramientas para responder">
+    <div class="zoomTools">
+      <button class="wBtn" id="zoomOut" title="Alejar el documento">Alejar</button>
+      <span class="zoomValue" id="zoomValue" aria-live="polite">100%</span>
+      <button class="wBtn" id="zoomIn" title="Acercar el documento">Acercar</button>
+      <button class="wBtn" id="zoomFit" title="Ajustar el documento al ancho">Ajustar</button>
+    </div>
+    <span class="toolSpacer"></span>
+    <span class="answerHint" id="answerHint">Toca un recuadro para responder con el teclado.</span>
+    <div class="answerActions">
+      <button class="wBtn" id="clearAnswers" title="Borrar las respuestas guardadas">Borrar respuestas</button>
+      <button class="wBtn primaryTool" id="savePdf" title="Descargar PDF con respuestas">Guardar PDF</button>
+    </div>
+  </section>
+  <main class="pdfArea" id="pdfArea">
     <div id="pdfBox"></div>
     <div class="pdfNav">
-      <button class="navBtn ghost" id="pgPrev">Pag anterior</button>
+      <button class="navBtn ghost" id="pgPrev">Página anterior</button>
       <span class="count" id="pgCount"></span>
-      <button class="navBtn ghost" id="pgNext">Pag siguiente</button>
+      <button class="navBtn ghost" id="pgNext">Página siguiente</button>
     </div>
-  </div>
+  </main>
 </div>
-<script type="module">
-import * as pdfjsLib from './vendor/pdf.min.mjs';
-const params = new URLSearchParams(location.search);
-const cid = params.get('c') || '1';
-const lessonParam = params.get('l') || '1-01';
-let course = null;
-let lessons = [];
-let lesson = null;
-let pdfDoc = null;
-let pageNum = 1;
-let strokes = [];
-let currentColor = '#1D1D1F';
-let currentSize = 2;
-let writing = false;
-let drawing = false;
-let lastX = 0, lastY = 0, curStroke = null;
-let clearBackup = null;
-const ANOT = 'cursosBiblicosAnot_';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.mjs';
-
-function pageHtml(n) {
-  return '<div class="pg" data-pg="' + n + '">' +
-    '<canvas class="pdfCanvas"></canvas>' +
-    '<canvas class="inkCanvas"></canvas>' +
-    '</div>';
-}
-
-function shortHash(value) {
-  let hash = 2166136261;
-  for (const character of value) {
-    hash ^= character.codePointAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0).toString(36);
-}
-
-function annotationKey() {
-  if (lesson && !lesson.managed && lesson.legacyNumber) return ANOT + cid + '_' + lesson.legacyNumber;
-  const id = lesson?.id || lessonParam;
-  return ANOT + cid + '_' + id + '_' + shortHash(lesson?.url || 'sin-archivo');
-}
-
-function loadAnot() {
-  try {
-    const raw = localStorage.getItem(annotationKey());
-    strokes = raw ? JSON.parse(raw) : [];
-  } catch (e) { strokes = []; }
-}
-
-function saveAnot() {
-  try {
-    localStorage.setItem(annotationKey(), JSON.stringify(strokes));
-  } catch (e) {}
-}
-
-function strokeToPoints(e, rect, w, h) {
-  const x = (e.clientX - rect.left) / w;
-  const y = (e.clientY - rect.top) / h;
-  return { x, y };
-}
-
-function drawStrokes(ctx, pageEl, w, h) {
-  for (const s of strokes) {
-    if (s.page !== pageNum) continue;
-    ctx.beginPath();
-    ctx.strokeStyle = s.color;
-    ctx.lineWidth = s.size;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    s.points.forEach((p, i) => {
-      const px = p.x * w, py = p.y * h;
-      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    });
-    ctx.stroke();
-  }
-}
-
-let renderTask = null;
-async function renderPage() {
-  if (renderTask) renderTask.cancel();
-  const page = await pdfDoc.getPage(pageNum);
-  const box = document.getElementById('pdfBox');
-  const html = pageHtml(pageNum);
-  box.innerHTML = html;
-  const pg = box.querySelector('.pg');
-  const canvas = pg.querySelector('.pdfCanvas');
-  const ink = pg.querySelector('.inkCanvas');
-  const cssW = Math.min(1000, box.clientWidth);
-  const viewport1 = page.getViewport({ scale: 1 });
-  const scale = cssW / viewport1.width;
-  const viewport = page.getViewport({ scale });
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = viewport.width * dpr;
-  canvas.height = viewport.height * dpr;
-  canvas.style.width = viewport.width + 'px';
-  canvas.style.height = viewport.height + 'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  try {
-    renderTask = page.render({ canvasContext: ctx, viewport });
-    await renderTask.promise;
-  } catch (e) {
-    if (e && e.name === 'RenderingCancelledException') return;
-    throw e;
-  } finally {
-    renderTask = null;
-  }
-  ink.width = viewport.width * dpr;
-  ink.height = viewport.height * dpr;
-  ink.style.width = viewport.width + 'px';
-  ink.style.height = viewport.height + 'px';
-  const ictx = ink.getContext('2d');
-  ictx.scale(dpr, dpr);
-  drawStrokes(ictx, pg, viewport.width, viewport.height);
-  
-
-  ink.onpointerdown = e => {
-    if (!writing) return;
-    e.preventDefault();
-    drawing = true;
-    clearBackup = null;
-    const rect = ink.getBoundingClientRect();
-    const p = strokeToPoints(e, rect, viewport.width, viewport.height);
-    curStroke = { page: pageNum, color: currentColor, size: currentSize, points: [p] };
-    lastX = p.x * viewport.width;
-    lastY = p.y * viewport.height;
-  };
-  ink.onpointermove = e => {
-    if (!drawing) return;
-    e.preventDefault();
-    const rect = ink.getBoundingClientRect();
-    const p = strokeToPoints(e, rect, viewport.width, viewport.height);
-    curStroke.points.push(p);
-    ictx.beginPath();
-    ictx.strokeStyle = curStroke.color;
-    ictx.lineWidth = curStroke.size;
-    ictx.lineCap = 'round';
-    ictx.lineJoin = 'round';
-    ictx.moveTo(lastX, lastY);
-    ictx.lineTo(p.x * viewport.width, p.y * viewport.height);
-    ictx.stroke();
-    lastX = p.x * viewport.width;
-    lastY = p.y * viewport.height;
-  };
-  const end = () => {
-    if (!drawing) return;
-    drawing = false;
-    strokes.push(curStroke);
-    curStroke = null;
-    saveAnot();
-  };
-  ink.onpointerup = end;
-  ink.onpointercancel = end;
-  ink.onpointerleave = end;
-  updatePgNav();
-}
-
-function updatePgNav() {
-  document.getElementById('pgCount').textContent = pageNum + ' / ' + (pdfDoc ? pdfDoc.numPages : 1);
-  document.getElementById('pgPrev').disabled = pageNum <= 1;
-  document.getElementById('pgNext').disabled = !pdfDoc || pageNum >= pdfDoc.numPages;
-}
-
-async function loadPdf(url) {
-  pdfDoc = await pdfjsLib.getDocument({ url, isEvalSupported: false }).promise;
-  pageNum = 1;
-  await renderPage();
-}
-
-async function init() {
-  const response = await fetch('/api/catalog');
-  const DATA = await response.json();
-  course = DATA.courses.find(c => c.id === cid);
-  if (!course) { location.href = 'index.html'; return; }
-  lessons = course.lessons.filter(item => item.type === 'pdf');
-  lesson = lessons.find(item => item.id === lessonParam || item.legacyNumber === lessonParam.padStart(2, '0'));
-  if (!lesson) {
-    document.title = 'No disponible';
-    document.getElementById('title').textContent = 'Lección no disponible';
-    const message = document.createElement('p');
-    message.className = 'emptyMsg';
-    message.textContent = 'Este archivo no está disponible.';
-    document.getElementById('pdfBox').replaceChildren(message);
-    return;
-  }
-  const idx = lessons.indexOf(lesson);
-  const total = lessons.length;
-  document.title = course.name + ' · ' + lesson.title;
-  document.getElementById('title').textContent = course.name + ' · ' + lesson.title;
-  document.getElementById('count').textContent = (idx + 1) + ' / ' + total;
-  document.getElementById('prev').style.visibility = idx <= 0 ? 'hidden' : 'visible';
-  document.getElementById('next').style.visibility = idx >= total - 1 ? 'hidden' : 'visible';
-
-  loadAnot();
-  if (course.section !== 'lafe') {
-    document.getElementById('writeTools').style.display = '';
-  }
-  try {
-    await loadPdf(lesson.url);
-  } catch (e) {
-    document.getElementById('pdfBox').innerHTML = '<p class="emptyMsg">Error al cargar la lección.</p>';
-  }
-}
-
-document.getElementById('back').onclick = () => location.href = 'curso.html?c=' + encodeURIComponent(cid);
-document.getElementById('prev').onclick = () => {
-  const n = lessons.indexOf(lesson) - 1;
-  if (n >= 0) location.href = 'leer.html?c=' + encodeURIComponent(cid) + '&l=' + encodeURIComponent(lessons[n].legacyNumber || lessons[n].id);
-};
-document.getElementById('next').onclick = () => {
-  const n = lessons.indexOf(lesson) + 1;
-  if (n < lessons.length) location.href = 'leer.html?c=' + encodeURIComponent(cid) + '&l=' + encodeURIComponent(lessons[n].legacyNumber || lessons[n].id);
-};
-document.getElementById('pgPrev').onclick = async () => {
-  if (pageNum <= 1) return;
-  pageNum--;
-  await renderPage();
-  document.querySelector('.pdfArea').scrollTop = 0;
-};
-document.getElementById('pgNext').onclick = async () => {
-  if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
-  pageNum++;
-  await renderPage();
-  document.querySelector('.pdfArea').scrollTop = 0;
-};
-document.getElementById('wPen').onclick = () => {
-  writing = !writing;
-  document.getElementById('wPen').classList.toggle('active', writing);
-};
-document.getElementById('wUndo').onclick = () => {
-  if (clearBackup) {
-    strokes = clearBackup;
-    clearBackup = null;
-  } else {
-    let index = strokes.length - 1;
-    while (index >= 0 && strokes[index].page !== pageNum) index--;
-    if (index < 0) return;
-    strokes.splice(index, 1);
-  }
-  saveAnot();
-  renderPage();
-};
-document.getElementById('wClear').onclick = async () => {
-  if (!strokes.length || !confirm('¿Borrar todas las notas de esta lección? Puedes usar Deshacer inmediatamente después.')) return;
-  clearBackup = structuredClone(strokes);
-  strokes = [];
-  saveAnot();
-  renderPage();
-};
-document.getElementById('wDownload').onclick = async () => {
-  const btn = document.getElementById('wDownload');
-  btn.textContent = 'Generando...';
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF();
-  const scale = 1.5;
-  const box = document.getElementById('pdfBox');
-  try {
-    for (let n = 1; n <= pdfDoc.numPages; n++) {
-      const page = await pdfDoc.getPage(n);
-      const viewport = page.getViewport({ scale });
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width * 2;
-      canvas.height = viewport.height * 2;
-      const ctx = canvas.getContext('2d');
-      ctx.scale(2, 2);
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      for (const s of strokes) {
-        if (s.page !== n) continue;
-        ctx.beginPath();
-        ctx.strokeStyle = s.color;
-        ctx.lineWidth = s.size * scale;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        s.points.forEach((p, i) => {
-          const px = p.x * viewport.width, py = p.y * viewport.height;
-          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-        });
-        ctx.stroke();
-      }
-      const v1 = page.getViewport({ scale: 1 });
-      if (n > 1) pdf.addPage([v1.width, v1.height]);
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, v1.width, v1.height, undefined, 'FAST');
-    }
-    const name = lesson.title + ' - con notas.pdf';
-    pdf.save(name);
-  } finally {
-    btn.textContent = 'Guardar PDF';
-  }
-};
-init();
-</script>
+<script type="module" src="reader.js"></script>
 </body>
 </html>

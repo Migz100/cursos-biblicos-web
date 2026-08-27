@@ -36,18 +36,17 @@ test('starter manifest preserves every bundled course and lesson', () => {
 test('file metadata accepts only bounded supported lesson formats', () => {
   assert.equal(fileInfo('01 La fe.pptx', '', 1024).extension, 'pptx');
   assert.equal(fileInfo('Clase.PDF', 'application/pdf', 50).contentType, 'application/pdf');
+  assert.equal(fileInfo('Cuaderno.pages', 'application/x-iwork-pages-sffpages', 500).extension, 'pages');
+  assert.equal(fileInfo('Portada.jpeg', 'image/jpeg', 500, 'cover').kind, 'cover');
+  assert.throws(() => fileInfo('Portada.png', 'image/png', 500), error => error.code === 'INVALID_FILE_TYPE');
   assert.throws(() => fileInfo('virus.exe', '', 20), error => error.code === 'INVALID_FILE_TYPE');
   assert.throws(() => fileInfo('grande.pdf', 'application/pdf', 26 * 1024 * 1024), error => error.code === 'INVALID_FILE_SIZE');
   assert.throws(() => fileInfo('falso.pdf', 'image/png', 20), error => error.code === 'INVALID_FILE_TYPE');
 });
 
-test('course removal is confirmed, soft, and reversible', () => {
+test('course removal is immediate, soft, and reversible', () => {
   const original = buildStarterManifest();
-  assert.throws(
-    () => applyMutation(original, { type: 'course.remove', courseId: '1', confirmText: 'otro' }),
-    error => error.code === 'CONFIRMATION_REQUIRED'
-  );
-  const removed = applyMutation(original, { type: 'course.remove', courseId: '1', confirmText: 'Fe de Jesús' });
+  const removed = applyMutation(original, { type: 'course.remove', courseId: '1' });
   assert.equal(removed.manifest.courses.length, 12);
   assert.equal(removed.manifest.trash[0].item.lessons.length, 20);
   assert.equal(original.courses.length, 13);
@@ -72,6 +71,36 @@ test('course and lesson edits preserve ordering and replacement recovery', () =>
   assert.equal(replacementTrash.item.originalName, 'two.pdf');
   manifest = applyMutation(manifest, { type: 'asset.restore', trashId: replacementTrash.id }).manifest;
   assert.equal(manifest.courses.find(item => item.id === course.id).lessons[0].originalName, 'two.pdf');
+});
+
+test('courses accept restorable image covers and an exact lesson order', () => {
+  const cover = {
+    validated: true,
+    type: 'jpg',
+    url: 'https://example.test/cover.jpg',
+    downloadUrl: 'https://example.test/cover.jpg?download=1',
+    originalName: 'cover.jpg',
+    pathname: 'cms/preview/test/assets/cover.jpg',
+    size: 100
+  };
+  let manifest = applyMutation(buildStarterManifest(), {
+    type: 'course.add', name: 'Con foto', short: 'CF', color: '#123456', section: 'cursos', coverAsset: cover,
+    lessons: [{ title: 'Dos', asset: asset('02.pdf') }, { title: 'Uno', asset: asset('01.pdf') }]
+  }).manifest;
+  const course = manifest.courses.at(-1);
+  assert.equal(course.coverUrl, cover.url);
+  manifest = applyMutation(manifest, {
+    type: 'course.reorderLessons', courseId: course.id, lessonIds: [course.lessons[1].id, course.lessons[0].id]
+  }).manifest;
+  assert.deepEqual(manifest.courses.at(-1).lessons.map(item => item.title), ['Uno', 'Dos']);
+  manifest = applyMutation(manifest, {
+    type: 'course.update', courseId: course.id, name: course.name, short: course.short,
+    color: course.color, section: course.section, removeCover: true
+  }).manifest;
+  assert.equal(manifest.courses.at(-1).coverUrl, null);
+  const trash = manifest.trash.find(item => item.kind === 'replaced_cover');
+  manifest = applyMutation(manifest, { type: 'cover.restore', trashId: trash.id }).manifest;
+  assert.equal(manifest.courses.at(-1).coverUrl, cover.url);
 });
 
 test('whole-course import creates all lessons atomically', () => {
