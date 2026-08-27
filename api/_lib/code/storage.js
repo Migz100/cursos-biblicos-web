@@ -69,7 +69,12 @@ async function acquireClaim(jobId, hostId) {
     return value;
   } catch {
     const previous = await exists(pathname);
-    if (!previous || Date.now() - previous.uploadedAt.getTime() <= CLAIM_LEASE_MS) return null;
+    if (!previous) return null;
+    let current = null;
+    try { current = await readEncrypted(previous, `claim:${jobId}`); } catch {}
+    const expiresAt = current ? Date.parse(current.expiresAt) : previous.uploadedAt.getTime() + CLAIM_LEASE_MS;
+    if (current?.hostId === hostId && Number.isFinite(expiresAt) && expiresAt > Date.now()) return current;
+    if (Number.isFinite(expiresAt) && expiresAt > Date.now()) return null;
     try { await del(pathname, { ifMatch: previous.etag }); } catch { return null; }
     value = nextClaim();
     try {
@@ -122,12 +127,25 @@ async function claimNextJob(hostId) {
     const claim = await acquireClaim(jobId, hostId);
     if (!claim) continue;
     try {
-      return { ...(await readEncrypted(blob, `job:${jobId}`)), leaseToken: claim.leaseToken, leaseExpiresAt: claim.expiresAt };
+      return {
+        ...(await readEncrypted(blob, `job:${jobId}`)),
+        leaseToken: claim.leaseToken,
+        leaseExpiresAt: claim.expiresAt,
+        eventSequence: await latestEventSequence(jobId)
+      };
     } catch {
       await completeJob(jobId, { status: 'failed', error: 'No se pudo leer la instrucción cifrada.' });
     }
   }
   return null;
+}
+
+async function latestEventSequence(jobId) {
+  const blobs = await listAll({ prefix: `${root()}events/${jobId}/` });
+  return blobs.reduce((latest, blob) => {
+    const sequence = Number((blob.pathname.match(/\/(\d+)\.json$/) || [])[1]);
+    return Number.isSafeInteger(sequence) ? Math.max(latest, sequence) : latest;
+  }, 0);
 }
 
 async function appendEvents(jobId, hostId, leaseToken, events) {

@@ -6,14 +6,15 @@ import { fileURLToPath } from 'node:url';
 import { spawn, spawnSync } from 'node:child_process';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
-const HOST_ROOT = path.resolve(process.env.LOCALAPPDATA || path.join(os.homedir(), '.cursos-biblicos-code-host'), 'CursosBiblicosCodeHost');
-const ENV_FILE = path.resolve(process.env.CODE_HOST_CONFIG || path.join(HOST_ROOT, 'config.env'));
-const CONFIG = loadEnvFile(ENV_FILE);
+const HOST_ROOT = path.resolve(process.env.CODE_HOST_DATA_ROOT || path.join(process.env.LOCALAPPDATA || os.homedir(), 'CursosBiblicosCodeHost'));
+const ENV_ONLY = process.env.CODE_HOST_ENV_ONLY === '1';
+const ENV_FILE = ENV_ONLY ? '' : path.resolve(process.env.CODE_HOST_CONFIG || path.join(HOST_ROOT, 'config.env'));
+const CONFIG = ENV_ONLY ? environmentConfig() : loadEnvFile(ENV_FILE);
 const REPO_ROOT = realDirectory(requiredEnv('CODE_REPO_ROOT'));
 const STATE_DIR = path.join(HOST_ROOT, 'state');
 const STATE_FILE = path.join(STATE_DIR, 'state.json');
 const WORK_ROOT = path.join(HOST_ROOT, 'work');
-const VERSION = '2.0.0';
+const VERSION = '2.0.1';
 
 const BASE_URL = requiredEnv('CODE_RELAY_BASE_URL').replace(/\/$/, '');
 const HOST_TOKEN = requiredEnv('CODE_HOST_TOKEN');
@@ -89,35 +90,39 @@ if (process.argv.includes('--self-test')) {
   process.exit(0);
 }
 
-process.on('SIGINT', stop);
-process.on('SIGTERM', stop);
-process.on('uncaughtException', error => log(`Uncaught error: ${safeError(error)}`));
-process.on('unhandledRejection', error => log(`Unhandled rejection: ${safeError(error)}`));
+async function runHost() {
+  process.on('SIGINT', stop);
+  process.on('SIGTERM', stop);
+  process.on('uncaughtException', error => log(`Uncaught error: ${safeError(error)}`));
+  process.on('unhandledRejection', error => log(`Unhandled rejection: ${safeError(error)}`));
 
-log(`Cursos Bíblicos code host ${VERSION} starting for ${BASE_URL}`);
-log(`Repository: ${REPO_ROOT}`);
-log(`Providers: ${providers.map(item => `${item.id}=${item.available ? 'ready' : 'off'}`).join(', ')}`);
+  log(`Cursos Bíblicos code host ${VERSION} starting for ${BASE_URL}`);
+  log(`Repository: ${REPO_ROOT}`);
+  log(`Providers: ${providers.map(item => `${item.id}=${item.available ? 'ready' : 'off'}`).join(', ')}`);
 
-await sendHeartbeat();
-const heartbeatTimer = setInterval(() => {
-  if (!busy) providers = probeProviders();
-  sendHeartbeat().catch(error => log(`Heartbeat failed: ${safeError(error)}`));
-}, HEARTBEAT_MS);
+  await sendHeartbeat();
+  const heartbeatTimer = setInterval(() => {
+    if (!busy) providers = probeProviders();
+    sendHeartbeat().catch(error => log(`Heartbeat failed: ${safeError(error)}`));
+  }, HEARTBEAT_MS);
 
-while (running) {
   try {
-    const response = await relay('/api/code/host/poll', { method: 'POST', body: { hostId: HOST_ID } });
-    if (response.job) await processJob(response.job);
-    else await delay(POLL_MS);
-  } catch (error) {
-    log(`Poll failed: ${safeError(error)}`);
-    await delay(Math.min(POLL_MS * 2, 15000));
+    while (running) {
+      try {
+        const response = await relay('/api/code/host/poll', { method: 'POST', body: { hostId: HOST_ID } });
+        if (response.job) await processJob(response.job);
+        else await delay(POLL_MS);
+      } catch (error) {
+        log(`Poll failed: ${safeError(error)}`);
+        await delay(Math.min(POLL_MS * 2, 15000));
+      }
+    }
+  } finally {
+    clearInterval(heartbeatTimer);
+    await sendHeartbeat().catch(() => {});
+    log('Code host stopped.');
   }
 }
-
-clearInterval(heartbeatTimer);
-await sendHeartbeat().catch(() => {});
-log('Code host stopped.');
 
 function loadEnvFile(filename) {
   if (!fs.existsSync(filename)) throw new Error(`Private host configuration is missing: ${filename}`);
@@ -135,6 +140,10 @@ function loadEnvFile(filename) {
     if (!(key in process.env)) process.env[key] = value;
   }
   return values;
+}
+
+function environmentConfig() {
+  return Object.fromEntries(Object.entries(process.env).filter(([key, value]) => key.startsWith('CODE_') && typeof value === 'string'));
 }
 
 function requiredEnv(name) {
@@ -266,7 +275,7 @@ class EventSink {
   constructor(job) {
     this.jobId = job.id;
     this.leaseToken = job.leaseToken;
-    this.sequence = 0;
+    this.sequence = Number.isSafeInteger(job.eventSequence) && job.eventSequence >= 0 ? job.eventSequence : 0;
     this.tail = Promise.resolve();
     this.lastError = null;
   }
@@ -1054,3 +1063,5 @@ function stop() {
   running = false;
   if (currentProcess) terminateProcess(currentProcess);
 }
+
+await runHost();
