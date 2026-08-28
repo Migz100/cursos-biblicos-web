@@ -369,12 +369,14 @@ async function printedTextRects(page, viewport) {
     const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
     const fontHeight = Math.hypot(tx[2], tx[3]);
     if (fontHeight < 3) continue;
-    rects.push({
-      x0: tx[4] / viewport.width,
-      y0: (tx[5] - fontHeight) / viewport.height,
-      x1: (tx[4] + item.width * viewport.scale) / viewport.width,
-      y1: (tx[5] + fontHeight * 0.25) / viewport.height
-    });
+    const baseline = tx[5] / viewport.height;
+    const x0 = tx[4] / viewport.width;
+    const x1 = (tx[4] + item.width * viewport.scale) / viewport.width;
+    const fh = fontHeight / viewport.height;
+    // The glyphs themselves, plus the underline zone below the baseline
+    // (links in these guides are underlined; the underline is not a write-in line).
+    rects.push({ x0, y0: baseline - fh, x1, y1: baseline + fh * 0.25 });
+    rects.push({ x0, y0: baseline + fh * 0.05, x1, y1: baseline + fh * 0.65 });
   }
   return rects;
 }
