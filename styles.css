@@ -187,12 +187,12 @@ input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; }
 .answerField {
   position: absolute; z-index: 2; min-width: 72px; min-height: 26px;
   resize: none; overflow: auto; padding: 2px 4px; border: 1.5px solid rgba(0,113,227,0.58);
-  border-radius: 5px; background: #fff; color: #17365D;
+  border-radius: 5px; background: rgba(255,255,255,0.45); color: #17365D;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   font-weight: 550; line-height: 1.15; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
-.answerField.line { border-width: 0 0 1.5px; border-radius: 3px 3px 0 0; background: #fff; box-shadow: none; }
-.answerField.box { background: #fff; }
+.answerField.line { border-width: 0 0 1.5px; border-radius: 3px 3px 0 0; background: rgba(255,255,255,0.45); box-shadow: none; }
+.answerField.box { background: rgba(255,255,255,0.45); }
 .answerField:focus { outline: 3px solid rgba(0,113,227,0.25); border-color: var(--accent); background: #fff; }
 .pdfNav {
   position: sticky; top: 0; left: 0; z-index: 6; width: min(420px, calc(100vw - 24px)); min-height: 52px;
@@ -242,6 +242,7 @@ input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; }
   .answerHint { display: none; }
   .toolSpacer { display: none; }
   .pdfArea { padding: 12px 8px 30px; }
+  .answerField { min-width: 36px; min-height: 16px; padding: 1px 3px; }
   .pdfNav { width: calc(100vw - 16px); }
   nav .inner { padding: 0 14px; }
   .manageLink { font-size: 14px; }
