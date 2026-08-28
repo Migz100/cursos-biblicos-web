@@ -74,6 +74,30 @@ function lessonRow(course, lesson, index) {
   };
   open.append(number, label, kind);
   row.append(open, button);
+  if (lesson.type === 'pdf' || isPresentation) {
+    const share = document.createElement('button');
+    share.className = 'dlRow shareRow';
+    share.type = 'button';
+    share.title = 'Compartir solo esta lección';
+    share.setAttribute('aria-label', `Compartir ${lesson.title}`);
+    share.textContent = 'Compartir';
+    share.onclick = async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const page = lesson.type === 'pdf' ? 'leer.html' : 'presentacion.html';
+      const url = `${location.origin}/${page}?c=${encodeURIComponent(course.id)}&l=${encodeURIComponent(lesson.legacyNumber || lesson.id)}&solo=1`;
+      const payload = { title: lesson.title, text: `${lesson.title} · ${course.name}`, url };
+      if (navigator.share) {
+        try { await navigator.share(payload); return; } catch (error) { if (error?.name === 'AbortError') return; }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        share.textContent = 'Copiado';
+        setTimeout(() => { share.textContent = 'Compartir'; }, 2000);
+      } catch { window.prompt('Copia el enlace:', url); }
+    };
+    row.appendChild(share);
+  }
   return row;
 }
 

@@ -1,0 +1,334 @@
+{
+  "books": [
+    {
+      "id": "01-genesis",
+      "name": "Génesis",
+      "chapters": 50
+    },
+    {
+      "id": "02-exodo",
+      "name": "Éxodo",
+      "chapters": 40
+    },
+    {
+      "id": "03-levitico",
+      "name": "Levítico",
+      "chapters": 27
+    },
+    {
+      "id": "04-numeros",
+      "name": "Números",
+      "chapters": 36
+    },
+    {
+      "id": "05-deuteronomio",
+      "name": "Deuteronomio",
+      "chapters": 34
+    },
+    {
+      "id": "06-josue",
+      "name": "Josué",
+      "chapters": 24
+    },
+    {
+      "id": "07-jueces",
+      "name": "Jueces",
+      "chapters": 21
+    },
+    {
+      "id": "08-rut",
+      "name": "Rut",
+      "chapters": 4
+    },
+    {
+      "id": "09-1-samuel",
+      "name": "1 Samuel",
+      "chapters": 31
+    },
+    {
+      "id": "10-2-samuel",
+      "name": "2 Samuel",
+      "chapters": 24
+    },
+    {
+      "id": "11-1-reyes",
+      "name": "1 Reyes",
+      "chapters": 22
+    },
+    {
+      "id": "12-2-reyes",
+      "name": "2 Reyes",
+      "chapters": 25
+    },
+    {
+      "id": "13-1-cronicas",
+      "name": "1 Crónicas",
+      "chapters": 29
+    },
+    {
+      "id": "14-2-cronicas",
+      "name": "2 Crónicas",
+      "chapters": 36
+    },
+    {
+      "id": "15-esdras",
+      "name": "Esdras",
+      "chapters": 10
+    },
+    {
+      "id": "16-nehemias",
+      "name": "Nehemías",
+      "chapters": 13
+    },
+    {
+      "id": "17-ester",
+      "name": "Ester",
+      "chapters": 10
+    },
+    {
+      "id": "18-job",
+      "name": "Job",
+      "chapters": 42
+    },
+    {
+      "id": "19-salmos",
+      "name": "Salmos",
+      "chapters": 150
+    },
+    {
+      "id": "20-proverbios",
+      "name": "Proverbios",
+      "chapters": 31
+    },
+    {
+      "id": "21-eclesiastes",
+      "name": "Eclesiastés",
+      "chapters": 12
+    },
+    {
+      "id": "22-cantares",
+      "name": "Cantares",
+      "chapters": 8
+    },
+    {
+      "id": "23-isaias",
+      "name": "Isaías",
+      "chapters": 66
+    },
+    {
+      "id": "24-jeremias",
+      "name": "Jeremías",
+      "chapters": 52
+    },
+    {
+      "id": "25-lamentaciones",
+      "name": "Lamentaciones",
+      "chapters": 5
+    },
+    {
+      "id": "26-ezequiel",
+      "name": "Ezequiel",
+      "chapters": 48
+    },
+    {
+      "id": "27-daniel",
+      "name": "Daniel",
+      "chapters": 12
+    },
+    {
+      "id": "28-oseas",
+      "name": "Oseas",
+      "chapters": 14
+    },
+    {
+      "id": "29-joel",
+      "name": "Joel",
+      "chapters": 3
+    },
+    {
+      "id": "30-amos",
+      "name": "Amós",
+      "chapters": 9
+    },
+    {
+      "id": "31-abdias",
+      "name": "Abdías",
+      "chapters": 1
+    },
+    {
+      "id": "32-jonas",
+      "name": "Jonás",
+      "chapters": 4
+    },
+    {
+      "id": "33-miqueas",
+      "name": "Miqueas",
+      "chapters": 7
+    },
+    {
+      "id": "34-nahum",
+      "name": "Nahúm",
+      "chapters": 3
+    },
+    {
+      "id": "35-habacuc",
+      "name": "Habacuc",
+      "chapters": 3
+    },
+    {
+      "id": "36-sofonias",
+      "name": "Sofonías",
+      "chapters": 3
+    },
+    {
+      "id": "37-hageo",
+      "name": "Hageo",
+      "chapters": 2
+    },
+    {
+      "id": "38-zacarias",
+      "name": "Zacarías",
+      "chapters": 14
+    },
+    {
+      "id": "39-malaquias",
+      "name": "Malaquías",
+      "chapters": 4
+    },
+    {
+      "id": "40-mateo",
+      "name": "Mateo",
+      "chapters": 28
+    },
+    {
+      "id": "41-marcos",
+      "name": "Marcos",
+      "chapters": 16
+    },
+    {
+      "id": "42-lucas",
+      "name": "Lucas",
+      "chapters": 24
+    },
+    {
+      "id": "43-juan",
+      "name": "Juan",
+      "chapters": 21
+    },
+    {
+      "id": "44-hechos",
+      "name": "Hechos",
+      "chapters": 28
+    },
+    {
+      "id": "45-romanos",
+      "name": "Romanos",
+      "chapters": 16
+    },
+    {
+      "id": "46-1-corintios",
+      "name": "1 Corintios",
+      "chapters": 16
+    },
+    {
+      "id": "47-2-corintios",
+      "name": "2 Corintios",
+      "chapters": 13
+    },
+    {
+      "id": "48-galatas",
+      "name": "Gálatas",
+      "chapters": 6
+    },
+    {
+      "id": "49-efesios",
+      "name": "Efesios",
+      "chapters": 6
+    },
+    {
+      "id": "50-filipenses",
+      "name": "Filipenses",
+      "chapters": 4
+    },
+    {
+      "id": "51-colosenses",
+      "name": "Colosenses",
+      "chapters": 4
+    },
+    {
+      "id": "52-1-tesalonicenses",
+      "name": "1 Tesalonicenses",
+      "chapters": 5
+    },
+    {
+      "id": "53-2-tesalonicenses",
+      "name": "2 Tesalonicenses",
+      "chapters": 3
+    },
+    {
+      "id": "54-1-timoteo",
+      "name": "1 Timoteo",
+      "chapters": 6
+    },
+    {
+      "id": "55-2-timoteo",
+      "name": "2 Timoteo",
+      "chapters": 4
+    },
+    {
+      "id": "56-tito",
+      "name": "Tito",
+      "chapters": 3
+    },
+    {
+      "id": "57-filemon",
+      "name": "Filemón",
+      "chapters": 1
+    },
+    {
+      "id": "58-hebreos",
+      "name": "Hebreos",
+      "chapters": 13
+    },
+    {
+      "id": "59-santiago",
+      "name": "Santiago",
+      "chapters": 5
+    },
+    {
+      "id": "60-1-pedro",
+      "name": "1 Pedro",
+      "chapters": 5
+    },
+    {
+      "id": "61-2-pedro",
+      "name": "2 Pedro",
+      "chapters": 3
+    },
+    {
+      "id": "62-1-juan",
+      "name": "1 Juan",
+      "chapters": 5
+    },
+    {
+      "id": "63-2-juan",
+      "name": "2 Juan",
+      "chapters": 1
+    },
+    {
+      "id": "64-3-juan",
+      "name": "3 Juan",
+      "chapters": 1
+    },
+    {
+      "id": "65-judas",
+      "name": "Judas",
+      "chapters": 1
+    },
+    {
+      "id": "66-apocalipsis",
+      "name": "Apocalipsis",
+      "chapters": 22
+    }
+  ]
+}

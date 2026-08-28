@@ -4,3 +4,4 @@ node_modules/
 .env*
 .code-host/
 .code-host.env
+.vercel

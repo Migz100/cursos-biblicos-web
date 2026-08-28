@@ -3,6 +3,7 @@ import * as pdfjsLib from './vendor/pdf.min.mjs';
 const params = new URLSearchParams(location.search);
 const cid = params.get('c') || '1';
 const lessonParam = params.get('l') || '1-01';
+const soloMode = params.get('solo') === '1';
 const ANSWER_PREFIX = 'cursosBiblicosText_v1_';
 const MIN_ZOOM = 0.65;
 const MAX_ZOOM = 2.5;
@@ -80,7 +81,7 @@ function mergeFields(fields) {
       y: Math.max(0, Math.min(0.99, Number(field.y) || 0)),
       w: Math.max(0.04, Math.min(1, Number(field.w) || 0.2)),
       h: Math.max(0.018, Math.min(0.25, Number(field.h) || 0.038)),
-      kind: field.kind === 'box' || field.kind === 'widget' ? field.kind : 'line',
+      kind: ['box', 'widget', 'check'].includes(field.kind) ? field.kind : 'line',
       ...(field.id ? { id: field.id } : {})
     };
     normalized.w = Math.min(normalized.w, 1 - normalized.x);
@@ -245,28 +246,118 @@ function detectedCanvasFields(sourceCanvas) {
       });
     }
   }
+  for (const checkbox of detectedCheckboxes(data, width, height, minY, maxY)) {
+    const overlaps = fields.some(field =>
+      Math.abs(field.x - checkbox.x) < field.w * 0.6 && Math.abs(field.y - checkbox.y) < 0.02
+    );
+    if (!overlaps) fields.push(checkbox);
+  }
   return mergeFields(fields);
+}
+
+// Small empty squares (☐) used as checkboxes in the study guides.
+function detectedCheckboxes(data, width, height, minY, maxY) {
+  const minSize = Math.max(7, Math.round(width * 0.010));
+  const maxSize = Math.round(width * 0.040);
+  const found = [];
+  const isInk = (x, y) => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return false;
+    const stats = pixelStats(data, (y * width + x) * 4);
+    return stats.gray < 200 && stats.spread < 70;
+  };
+  for (let y = minY; y < maxY - minSize; y += 1) {
+    let x = 0;
+    while (x < width - minSize) {
+      if (!isInk(x, y)) { x += 1; continue; }
+      let x1 = x;
+      while (x1 + 1 < width && isInk(x1 + 1, y)) x1 += 1;
+      const span = x1 - x + 1;
+      x = x1 + 1;
+      if (span < minSize || span > maxSize) continue;
+      // Candidate top border. Find the bottom border within a square-ish distance.
+      let bottom = -1;
+      for (let yy = y + minSize; yy <= Math.min(y + maxSize + 2, maxY - 1); yy += 1) {
+        let dark = 0;
+        for (let xx = x1 - span + 1; xx <= x1; xx += 1) dark += isInk(xx, yy) ? 1 : 0;
+        if (dark / span >= 0.7) { bottom = yy; break; }
+      }
+      if (bottom < 0) continue;
+      const side = bottom - y + 1;
+      if (Math.abs(side - span) > Math.max(3, span * 0.35)) continue;
+      let left = 0;
+      let right = 0;
+      for (let yy = y; yy <= bottom; yy += 1) {
+        left += isInk(x1 - span + 1, yy) ? 1 : 0;
+        right += isInk(x1, yy) ? 1 : 0;
+      }
+      if (left / side < 0.55 || right / side < 0.55) continue;
+      // A real checkbox stands alone: no letters touching it on either side.
+      let neighbor = 0;
+      let neighborPixels = 0;
+      for (let yy = y; yy <= bottom; yy += 1) {
+        for (const xx of [x1 - span - 6, x1 - span - 5, x1 - span - 4, x1 + 4, x1 + 5, x1 + 6]) {
+          neighbor += isInk(xx, yy) ? 1 : 0;
+          neighborPixels += 1;
+        }
+      }
+      if (neighborPixels && neighbor / neighborPixels > 0.10) continue;
+      // ...and its interior is empty.
+      let inner = 0;
+      let innerPixels = 0;
+      for (let yy = y + 3; yy <= bottom - 3; yy += 2) {
+        for (let xx = x1 - span + 4; xx <= x1 - 3; xx += 2) {
+          inner += isInk(xx, yy) ? 1 : 0;
+          innerPixels += 1;
+        }
+      }
+      if (innerPixels && inner / innerPixels > 0.02) continue;
+      // Real checkboxes are square-cornered; rounded letters (O, D, Q) are not.
+      const x0 = x1 - span + 1;
+      let corners = 0;
+      for (const [cxx, cyy] of [[x0, y], [x1, y], [x0, bottom], [x1, bottom]]) {
+        let dark = 0;
+        for (let dy = 0; dy <= 1; dy += 1) for (let dx = 0; dx <= 1; dx += 1) dark += isInk(cxx + dx, cyy + dy) ? 1 : 0;
+        if (dark >= 3) corners += 1;
+      }
+      if (corners < 3) continue;
+      const cx = x1 - span + 1;
+      const duplicate = found.some(box => Math.abs(box.px - cx) < span * 0.6 && Math.abs(box.py - y) < span * 0.6);
+      if (duplicate) continue;
+      found.push({
+        px: cx,
+        py: y,
+        x: Math.max(0, cx - 1) / width,
+        y: Math.max(0, y - 1) / height,
+        w: (span + 2) / width,
+        h: (side + 2) / height,
+        kind: 'check'
+      });
+    }
+  }
+  return found;
 }
 
 async function annotationFields(page, viewport) {
   const annotations = await page.getAnnotations({ intent: 'display' });
-  return annotations.filter(annotation => annotation.fieldType === 'Tx' && Array.isArray(annotation.rect)).map(annotation => {
-    const first = [annotation.rect[0], annotation.rect[1]];
-    const second = [annotation.rect[2], annotation.rect[3]];
-    pdfjsLib.Util.applyTransform(first, viewport.transform);
-    pdfjsLib.Util.applyTransform(second, viewport.transform);
-    const rectangle = [first[0], first[1], second[0], second[1]];
-    const left = Math.min(rectangle[0], rectangle[2]);
-    const top = Math.min(rectangle[1], rectangle[3]);
-    return {
-      id: `widget-${annotation.id}`,
-      x: left / viewport.width,
-      y: top / viewport.height,
-      w: Math.abs(rectangle[2] - rectangle[0]) / viewport.width,
-      h: Math.abs(rectangle[3] - rectangle[1]) / viewport.height,
-      kind: 'widget'
-    };
-  });
+  return annotations
+    .filter(annotation => (annotation.fieldType === 'Tx' || (annotation.fieldType === 'Btn' && annotation.checkBox)) && Array.isArray(annotation.rect))
+    .map(annotation => {
+      const first = [annotation.rect[0], annotation.rect[1]];
+      const second = [annotation.rect[2], annotation.rect[3]];
+      pdfjsLib.Util.applyTransform(first, viewport.transform);
+      pdfjsLib.Util.applyTransform(second, viewport.transform);
+      const rectangle = [first[0], first[1], second[0], second[1]];
+      const left = Math.min(rectangle[0], rectangle[2]);
+      const top = Math.min(rectangle[1], rectangle[3]);
+      return {
+        id: `widget-${annotation.id}`,
+        x: left / viewport.width,
+        y: top / viewport.height,
+        w: Math.abs(rectangle[2] - rectangle[0]) / viewport.width,
+        h: Math.abs(rectangle[3] - rectangle[1]) / viewport.height,
+        kind: annotation.fieldType === 'Btn' ? 'check' : 'widget'
+      };
+    });
 }
 
 async function fieldsForPage(page, viewport, canvas, pageNumber) {
@@ -286,6 +377,30 @@ function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
   fields.forEach((field, index) => {
     const id = fieldId(pageNumber, field);
     answerState.fields[id] = { page: pageNumber, ...field };
+    if (field.kind === 'check') {
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'answerCheck';
+      toggle.dataset.answerId = id;
+      toggle.setAttribute('aria-label', `Marcar casilla ${index + 1} de la página ${pageNumber}`);
+      toggle.setAttribute('aria-pressed', String(answerState.values[id] === '1'));
+      if (answerState.values[id] === '1') toggle.classList.add('on');
+      toggle.style.left = `${field.x * 100}%`;
+      toggle.style.top = `${field.y * 100}%`;
+      toggle.style.width = `${field.w * 100}%`;
+      toggle.style.height = `${field.h * 100}%`;
+      toggle.addEventListener('click', () => {
+        const next = answerState.values[id] === '1' ? '' : '1';
+        if (next) answerState.values[id] = next;
+        else delete answerState.values[id];
+        toggle.classList.toggle('on', Boolean(next));
+        toggle.setAttribute('aria-pressed', String(Boolean(next)));
+        saveAnswers();
+      });
+      layer.appendChild(toggle);
+      visibleCount += 1;
+      return;
+    }
     const input = document.createElement('textarea');
     input.className = `answerField ${field.kind}`;
     input.dataset.answerId = id;
@@ -310,6 +425,149 @@ function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
   pageElement.dataset.fieldCount = String(visibleCount);
   saveAnswers();
   if (pageNumber === pageNum) updateAnswerHint();
+}
+
+// Tap any Bible reference (Juan 3:16, Apoc. 14:6-12...) to read the full verse.
+async function createVerseLayer(pageElement, page, viewport, pageNumber) {
+  if (typeof BibleVerses === 'undefined') return;
+  const textContent = await page.getTextContent();
+  const items = [];
+  for (const item of textContent.items) {
+    if (!item.str || !item.str.trim()) continue;
+    const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+    const fontHeight = Math.hypot(tx[2], tx[3]);
+    if (fontHeight < 3) continue;
+    items.push({ text: item.str, x: tx[4], y: tx[5] - fontHeight, w: item.width * viewport.scale, h: fontHeight });
+  }
+  if (!items.length) return;
+  items.sort((a, b) => (a.y - b.y) || (a.x - b.x));
+  const lines = [];
+  for (const item of items) {
+    const line = lines[lines.length - 1];
+    if (line && Math.abs(item.y - line.y) <= Math.max(2, item.h * 0.45)) line.items.push(item);
+    else lines.push({ y: item.y, items: [item] });
+  }
+  const layer = document.createElement('div');
+  layer.className = 'verseLayer';
+  let lastBookId = '';
+  const placements = [];
+  for (const line of lines) {
+    line.items.sort((a, b) => a.x - b.x);
+    let text = '';
+    const spans = [];
+    for (const item of line.items) {
+      if (spans.length) {
+        const prev = spans[spans.length - 1];
+        const gap = item.x - (prev.x + prev.w);
+        if (gap > item.h * 0.18 && !text.endsWith(' ') && !item.text.startsWith(' ')) text += ' ';
+      }
+      spans.push({ ...item, start: text.length });
+      text += item.text;
+    }
+    const lineHeight = Math.max(...line.items.map(item => item.h));
+    const normalized = BibleVerses.normalizeExtracted(text);
+    for (const match of BibleVerses.findReferences(normalized.text, lastBookId)) {
+      lastBookId = match.bookId;
+      const rawStart = normalized.map[match.index];
+      const rawEnd = normalized.map[Math.min(match.end, normalized.map.length - 1)];
+      const first = spans.find(span => span.start + span.text.length > rawStart);
+      const last = [...spans].reverse().find(span => span.start < rawEnd);
+      if (!first || !last) continue;
+      const startX = first.x + first.w * Math.max(0, Math.min(1, (rawStart - first.start) / first.text.length));
+      const endX = last.x + last.w * Math.max(0, Math.min(1, (rawEnd - last.start) / last.text.length));
+      if (endX - startX < 6) continue;
+      placements.push({ match, line, lineHeight, startX, endX });
+    }
+  }
+  const uniqueBooks = [...new Set(placements.map(p => p.match.bookId))];
+  const bookData = new Map(await Promise.all(uniqueBooks.map(id => BibleVerses.fetchBook(id).then(data => [id, data]))));
+  let count = 0;
+  for (const placement of placements) {
+    const { match, line, lineHeight, startX, endX } = placement;
+    const data = bookData.get(match.bookId);
+    // Keep only the parts that really exist (PDF extraction sometimes merges digits).
+    match.parts = match.parts.filter(part => BibleVerses.referenceIsValid({ ...match, parts: [part] }, data));
+    if (!match.parts.length) continue;
+    const hotspot = document.createElement('button');
+    hotspot.type = 'button';
+    hotspot.className = 'verseRef';
+    hotspot.style.left = `${(startX / viewport.width) * 100}%`;
+    hotspot.style.top = `${(line.y / viewport.height) * 100}%`;
+    hotspot.style.width = `${((endX - startX) / viewport.width) * 100}%`;
+    hotspot.style.height = `${(Math.max(lineHeight, 10) / viewport.height) * 100}%`;
+    const label = BibleVerses.formatReference(match);
+    hotspot.title = label;
+    hotspot.setAttribute('aria-label', `Leer ${label} en la Biblia (Reina-Valera 1960)`);
+    hotspot.addEventListener('click', () => openVersePopup(match));
+    layer.appendChild(hotspot);
+    count += 1;
+  }
+  if (count) pageElement.appendChild(layer);
+}
+
+let verseModal = null;
+
+function ensureVerseModal() {
+  if (verseModal) return verseModal;
+  const modal = document.createElement('div');
+  modal.className = 'verseModal';
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="verseCard" role="dialog" aria-modal="true" aria-labelledby="verseTitle">
+      <h2 class="verseTitle" id="verseTitle"></h2>
+      <div class="verseText" id="verseText"></div>
+      <p class="verseVersion">Reina-Valera 1960</p>
+      <div class="verseActions">
+        <button type="button" class="wBtn" id="verseCopy">Copiar</button>
+        <button type="button" class="wBtn primaryTool" id="verseClose">Cerrar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  const close = () => { modal.hidden = true; };
+  modal.addEventListener('click', event => { if (event.target === modal) close(); });
+  modal.querySelector('#verseClose').addEventListener('click', close);
+  modal.querySelector('#verseCopy').addEventListener('click', event => {
+    const text = `${modal.querySelector('#verseTitle').textContent}\n${modal.querySelector('#verseText').innerText}\nReina-Valera 1960`;
+    navigator.clipboard?.writeText(text).then(() => {
+      event.target.textContent = 'Copiado';
+      setTimeout(() => { event.target.textContent = 'Copiar'; }, 1600);
+    }).catch(() => {});
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !modal.hidden) close();
+  });
+  verseModal = modal;
+  return modal;
+}
+
+async function openVersePopup(ref) {
+  const modal = ensureVerseModal();
+  const title = modal.querySelector('#verseTitle');
+  const body = modal.querySelector('#verseText');
+  title.textContent = BibleVerses.formatReference(ref);
+  body.textContent = 'Buscando el texto...';
+  modal.hidden = false;
+  const blocks = await BibleVerses.resolveReference(ref, 'assets/bible/rvr1960/');
+  body.replaceChildren();
+  let any = false;
+  for (const block of blocks) {
+    if (blocks.length > 1) {
+      const heading = document.createElement('h3');
+      heading.className = 'verseBlockTitle';
+      heading.textContent = block.heading;
+      body.appendChild(heading);
+    }
+    for (const line of block.lines) {
+      if (!line.text) continue;
+      any = true;
+      const p = document.createElement('p');
+      const number = document.createElement('sup');
+      number.textContent = String(line.verse);
+      p.append(number, document.createTextNode(` ${line.text}`));
+      body.appendChild(p);
+    }
+  }
+  if (!any) body.textContent = 'No se encontró este texto. Revisa la cita en la lección.';
 }
 
 function loadingElement(pageNumber) {
@@ -387,6 +645,7 @@ async function renderPageElement(element, sequence) {
   const fields = await fieldsForPage(page, viewport, canvas, pageNumber);
   if (sequence !== renderSequence || element.dataset.rendering !== 'true' || !element.isConnected) return;
   createAnswerLayer(element, fields, viewport, pageNumber);
+  createVerseLayer(element, page, viewport, pageNumber).catch(() => {});
   element.dataset.rendered = 'true';
   element.dataset.rendering = 'false';
   if (Math.abs(pageNumber - pageNum) > 3) {
@@ -561,11 +820,22 @@ function wrapText(context, text, width) {
 }
 
 function drawAnswer(context, field, text, width, height) {
-  if (!text) return;
   const x = field.x * width;
   const y = field.y * height;
   const boxWidth = field.w * width;
   const boxHeight = field.h * height;
+  if (field.kind === 'check') {
+    if (text !== '1') return;
+    context.save();
+    context.fillStyle = '#0A6BCE';
+    context.font = `800 ${Math.max(14, boxHeight * 1.1)}px -apple-system, Arial, sans-serif`;
+    context.textBaseline = 'middle';
+    context.textAlign = 'center';
+    context.fillText('✓', x + boxWidth / 2, y + boxHeight / 2);
+    context.restore();
+    return;
+  }
+  if (!text) return;
   const fontSize = Math.max(11, Math.min(19, boxHeight * 0.58));
   const lineHeight = fontSize * 1.18;
   context.save();
@@ -621,6 +891,11 @@ function syncVisibleAnswers() {
   document.querySelectorAll('.answerField[data-answer-id]').forEach(input => {
     input.value = answerState.values[input.dataset.answerId] || '';
   });
+  document.querySelectorAll('.answerCheck[data-answer-id]').forEach(toggle => {
+    const on = answerState.values[toggle.dataset.answerId] === '1';
+    toggle.classList.toggle('on', on);
+    toggle.setAttribute('aria-pressed', String(on));
+  });
 }
 
 function clearOrRestoreAnswers() {
@@ -670,9 +945,9 @@ async function init() {
   const index = lessons.indexOf(lesson);
   document.title = `${course.name} · ${lesson.title}`;
   document.getElementById('title').textContent = `${course.name} · ${lesson.title}`;
-  document.getElementById('count').textContent = `${index + 1} / ${lessons.length}`;
-  document.getElementById('prev').style.visibility = index <= 0 ? 'hidden' : 'visible';
-  document.getElementById('next').style.visibility = index >= lessons.length - 1 ? 'hidden' : 'visible';
+  document.getElementById('count').textContent = soloMode ? '' : `${index + 1} / ${lessons.length}`;
+  document.getElementById('prev').style.visibility = index <= 0 || soloMode ? 'hidden' : 'visible';
+  document.getElementById('next').style.visibility = index >= lessons.length - 1 || soloMode ? 'hidden' : 'visible';
   loadAnswers();
   await loadPdf(lesson.url);
 }

@@ -24,4 +24,4 @@ The complete supporting source library is at `N:\projects\personal\Personal\Curs
 4. Run `npm test` and `npm run check` after an edit.
 5. Do not commit, push, or deploy. The local coding host performs those steps only after the user explicitly chooses Publish.
 
-Never open, read, print, transmit, or edit `.env*`, `.vercel/`, `.code-host/`, credential files, or provider configuration. Do not weaken the private-link checks or the encrypted relay. Do not add a login screen unless Miguel explicitly asks for one.
+Never open, read, print, transmit, or edit `.env*`, `.vercel/`, `.code-host/`, credential files, or provider configuration. The editor is OPEN TO EVERYONE since 2026-08-27 (Miguel's explicit decision): `requireEditor` and `requirePairingKey` are intentional no-ops; do not re-add the private-link gate. The encrypted relay and host token still protect the coding host; do not weaken those. Do not add a login screen unless Miguel explicitly asks for one.

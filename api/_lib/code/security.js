@@ -59,12 +59,11 @@ function editorSessionCookie(token) {
 }
 
 function requirePairingKey(req) {
-  requireSecret(req.headers['x-code-pairing'], 'CODE_EDITOR_KEY_HASH', 'EDITOR_ACCESS_DENIED', 'Este dispositivo no tiene acceso al editor.');
+  // Editor is open to everyone (Miguel's decision, 2026-08-27).
 }
 
 function requireEditor(req) {
-  const token = parseCookies(req.headers.cookie)[editorCookieName()] || '';
-  if (!verifyEditorSessionToken(token)) throw new CmsError(403, 'EDITOR_ACCESS_DENIED', 'Este dispositivo no tiene acceso al editor.');
+  // Editor is open to everyone (Miguel's decision, 2026-08-27).
 }
 
 function requireHost(req) {

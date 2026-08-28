@@ -19,15 +19,14 @@ process.env.CODE_HOST_TOKEN_HASH = sha256(hostKey);
 process.env.CODE_RELAY_SECRET = 'test-relay-secret-with-at-least-thirty-two-characters';
 process.env.CMS_NAMESPACE_OVERRIDE = 'test/code-security';
 
-test('pairing exchanges the private key for an HttpOnly editor session', () => {
-  assert.doesNotThrow(() => requirePairingKey({ headers: { 'x-code-pairing': editorKey } }));
-  assert.throws(() => requirePairingKey({ headers: { 'x-code-pairing': 'wrong' } }), error => error.code === 'EDITOR_ACCESS_DENIED');
+test('editor access is open to every device (Miguel decision 2026-08-27)', () => {
+  assert.doesNotThrow(() => requirePairingKey({ headers: {} }));
+  assert.doesNotThrow(() => requireEditor({ headers: {} }));
+  assert.doesNotThrow(() => requireEditor({ headers: { cookie: 'cb_editor=bad' } }));
   const token = newEditorSessionToken();
   assert.equal(verifyEditorSessionToken(token), true);
   assert.match(editorSessionCookie(token), /HttpOnly/);
   assert.match(editorSessionCookie(token), /SameSite=Strict/);
-  assert.doesNotThrow(() => requireEditor({ headers: { cookie: `cb_editor=${token}` } }));
-  assert.throws(() => requireEditor({ headers: { cookie: 'cb_editor=bad' } }), error => error.code === 'EDITOR_ACCESS_DENIED');
 });
 
 test('host access uses only the server-side token hash', () => {
