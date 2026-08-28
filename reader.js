@@ -360,6 +360,41 @@ async function annotationFields(page, viewport) {
     });
 }
 
+// Rects (fractions of the page) of every printed text glyph run.
+async function printedTextRects(page, viewport) {
+  const textContent = await page.getTextContent();
+  const rects = [];
+  for (const item of textContent.items) {
+    if (!item.str || !item.str.trim()) continue;
+    const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+    const fontHeight = Math.hypot(tx[2], tx[3]);
+    if (fontHeight < 3) continue;
+    rects.push({
+      x0: tx[4] / viewport.width,
+      y0: (tx[5] - fontHeight) / viewport.height,
+      x1: (tx[4] + item.width * viewport.scale) / viewport.width,
+      y1: (tx[5] + fontHeight * 0.25) / viewport.height
+    });
+  }
+  return rects;
+}
+
+// A real write-in blank has no printed text inside it; underlined words do.
+function overlapsPrintedText(field, rects) {
+  const fx0 = field.x;
+  const fy0 = field.y;
+  const fx1 = field.x + field.w;
+  const fy1 = field.y + field.h;
+  let hits = 0;
+  for (const rect of rects) {
+    const overlapX = Math.min(fx1, rect.x1) - Math.max(fx0, rect.x0);
+    const overlapY = Math.min(fy1, rect.y1) - Math.max(fy0, rect.y0);
+    if (overlapX > 0 && overlapY > 0) hits += 1;
+    if (hits >= 1) return true;
+  }
+  return false;
+}
+
 async function fieldsForPage(page, viewport, canvas, pageNumber) {
   const annotations = await annotationFields(page, viewport);
   const fieldDocument = currentFieldDocument();
@@ -367,7 +402,10 @@ async function fieldsForPage(page, viewport, canvas, pageNumber) {
     return mergeFields([...annotations, ...(fieldDocument.pages[String(pageNumber)] || [])]);
   }
   if (annotations.length) return mergeFields(annotations);
-  return mergeFields(detectedCanvasFields(canvas));
+  const detected = detectedCanvasFields(canvas);
+  if (!detected.length) return [];
+  const rects = await printedTextRects(page, viewport);
+  return mergeFields(detected.filter(field => !overlapsPrintedText(field, rects)));
 }
 
 function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
