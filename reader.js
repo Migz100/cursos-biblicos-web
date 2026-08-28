@@ -400,14 +400,20 @@ function overlapsPrintedText(field, rects) {
 async function fieldsForPage(page, viewport, canvas, pageNumber) {
   const annotations = await annotationFields(page, viewport);
   const fieldDocument = currentFieldDocument();
+  const needsFilter = fieldDocument?.pages?.[String(pageNumber)]?.length || (!annotations.length && !fieldDocument);
+  if (!needsFilter && annotations.length) return mergeFields(annotations);
+  let detected;
   if (fieldDocument && Object.prototype.hasOwnProperty.call(fieldDocument.pages || {}, String(pageNumber))) {
-    return mergeFields([...annotations, ...(fieldDocument.pages[String(pageNumber)] || [])]);
+    detected = mergeFields([...annotations, ...(fieldDocument.pages[String(pageNumber)] || [])]);
+  } else if (annotations.length) {
+    return mergeFields(annotations);
+  } else {
+    detected = detectedCanvasFields(canvas);
   }
-  if (annotations.length) return mergeFields(annotations);
-  const detected = detectedCanvasFields(canvas);
   if (!detected.length) return [];
   const rects = await printedTextRects(page, viewport);
-  return mergeFields(detected.filter(field => !overlapsPrintedText(field, rects)));
+  // Catalog/canvas guesses never sit on top of printed glyphs; native widgets do what they want.
+  return mergeFields(detected.filter(field => field.kind === 'widget' || !overlapsPrintedText(field, rects)));
 }
 
 function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
