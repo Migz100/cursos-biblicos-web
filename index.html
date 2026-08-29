@@ -5,26 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#F5F5F7">
+<meta name="theme-color" content="#F6F3EC">
 <title>Cursos Bíblicos</title>
-<meta name="description" content="Doce cursos de estudio bíblico: Fe de Jesús, La Gran Esperanza, Apocalipsis, Daniel y más. Lecciones en PDF.">
+<meta name="description" content="Cursos de estudio bíblico: Fe de Jesús, La Gran Esperanza, Apocalipsis, Daniel y más. Lecciones en PDF.">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="homePage">
 <nav><div class="inner"><span class="brand" id="brand">Cursos Bíblicos</span><span class="spacer"></span><a class="manageLink" href="admin/">Administrar</a></div></nav>
 <main>
-  <div class="hero">
-    <h1 id="h1"></h1>
-    <p id="sub"></p>
-    <a class="dlBtn" id="dlBtn" download hidden>Descargar catálogo original (ZIP)</a>
+  <section class="hero homeHero" aria-labelledby="homeTitle">
+    <h1 id="homeTitle">Estudia la Biblia paso a paso</h1>
+    <p class="heroIntro">Cursos con lecciones en PDF para quien quiere comenzar o seguir aprendiendo de forma sencilla.</p>
+    <div class="heroActions">
+      <a class="primaryAction" id="startBtn" hidden></a>
+      <a class="libraryAction" href="#biblioteca">Ver todos los cursos</a>
+    </div>
+  </section>
+
+  <section class="library" id="biblioteca" aria-labelledby="libraryTitle">
+    <div class="libraryHeader">
+      <h2 id="libraryTitle">Biblioteca de cursos</h2>
+      <p>Elige un curso o búscalo por nombre.</p>
+    </div>
+    <div class="searchWrap">
+      <label class="searchLabel" for="search">Buscar un curso</label>
+      <div class="searchField">
+        <svg class="glass" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.6"/><line x1="10.8" y1="10.8" x2="15" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input type="search" id="search" placeholder="Escribe el nombre del curso" autocomplete="off">
+      </div>
+    </div>
+    <div id="sections"></div>
+    <div class="empty" id="empty" role="status" aria-live="polite" style="display:none">Ningún curso coincide con tu búsqueda.</div>
+  </section>
+
+  <section class="homeArchive" id="homeArchive" aria-labelledby="archiveTitle" hidden>
+    <h2 id="archiveTitle">Descargar el catálogo</h2>
+    <a class="dlBtn archiveDownload" id="dlBtn" download hidden>Descargar catálogo original (ZIP)</a>
     <p class="archiveNote" id="archiveNote" hidden>Este ZIP conserva el catálogo inicial. Los cambios nuevos se descargan por lección.</p>
-  </div>
-  <div class="searchWrap">
-    <svg class="glass" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="#1D1D1F" stroke-width="1.6"/><line x1="10.8" y1="10.8" x2="15" y2="15" stroke="#1D1D1F" stroke-width="1.6" stroke-linecap="round"/></svg>
-    <input type="search" id="search" placeholder="Buscar curso" autocomplete="off">
-  </div>
-  <div id="sections"></div>
-  <div class="empty" id="empty" style="display:none">Ningún curso coincide con "0".</div>
+  </section>
 </main>
 <script src="site.js"></script>
 </body>
