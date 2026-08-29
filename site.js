@@ -90,7 +90,7 @@ function render(courses) {
   for (const section of SECTIONS) {
     const list = courses.filter(course => (course.section || 'cursos') === section.id);
     if (!list.length) continue;
-    wrap.appendChild(textElement('h2', 'secHead', section.title));
+    wrap.appendChild(textElement('h3', 'secHead', section.title));
     const grid = document.createElement('div');
     grid.className = 'grid';
     list.forEach(course => grid.appendChild(makeCard(course)));
@@ -102,12 +102,20 @@ async function load() {
   const response = await fetch(DATA_URL);
   if (!response.ok) throw new Error('No se pudo cargar el catálogo.');
   DATA = await response.json();
-  document.getElementById('h1').textContent = DATA.appName;
-  document.getElementById('sub').textContent = DATA.appSubtitle;
+  const startingCourse = DATA.courses.find(course => String(course.id) === '1')
+    || DATA.courses.find(course => (course.section || 'cursos') === 'cursos')
+    || DATA.courses[0];
+  if (startingCourse) {
+    const start = document.getElementById('startBtn');
+    start.href = `curso.html?c=${encodeURIComponent(startingCourse.id)}`;
+    start.textContent = `Comenzar con ${startingCourse.name}`;
+    start.hidden = false;
+  }
   const download = document.getElementById('dlBtn');
   if (DATA.zip) {
     download.href = DATA.zip;
     download.hidden = false;
+    document.getElementById('homeArchive').hidden = false;
     document.getElementById('archiveNote').hidden = false;
     download.addEventListener('click', event => {
       event.preventDefault();
@@ -118,6 +126,7 @@ async function load() {
 }
 
 document.getElementById('search').addEventListener('input', event => {
+  if (!DATA) return;
   const query = event.target.value.trim().toLocaleLowerCase('es');
   render(DATA.courses.filter(course =>
     course.name.toLocaleLowerCase('es').includes(query) || course.short.toLocaleLowerCase('es').includes(query)
