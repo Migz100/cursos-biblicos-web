@@ -276,7 +276,6 @@ input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; }
   .toolSpacer { display: none; }
   .pdfArea { padding: 12px 8px 30px; }
   .answerField { min-width: 36px; min-height: 16px; padding: 1px 3px; }
-  .verseRef { min-height: 22px; }
   .pdfNav { width: calc(100vw - 16px); }
   nav .inner { padding: 0 14px; }
   .manageLink { font-size: 14px; }

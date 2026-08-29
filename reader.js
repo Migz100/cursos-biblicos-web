@@ -475,6 +475,14 @@ function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
 }
 
 // Tap any Bible reference (Juan 3:16, Apoc. 14:6-12...) to read the full verse.
+// Grows a hotspot to a tappable 22px without shifting its visual center.
+function verseHotspotGeometry(y, h, viewportHeight) {
+  const px = h * viewportHeight;
+  if (px >= 22) return { y, h };
+  const extra = (22 - px) / viewportHeight;
+  return { y: Math.max(0, y - extra / 2), h: h + extra };
+}
+
 async function createVerseLayer(pageElement, page, viewport, pageNumber) {
   if (typeof BibleVerses === 'undefined') return;
   // OCR-generated catalog covers lessons whose PDFs have no usable text layer.
@@ -489,13 +497,14 @@ async function createVerseLayer(pageElement, page, viewport, pageNumber) {
     layer.className = 'verseLayer';
     for (const entry of catalogRefs) {
       const match = { bookId: entry.bookId, bookName: entry.bookName, parts: entry.parts };
+      const geo = verseHotspotGeometry(entry.y, entry.h, viewport.height);
       const hotspot = document.createElement('button');
       hotspot.type = 'button';
       hotspot.className = 'verseRef';
       hotspot.style.left = `${entry.x * 100}%`;
-      hotspot.style.top = `${entry.y * 100}%`;
+      hotspot.style.top = `${geo.y * 100}%`;
       hotspot.style.width = `${entry.w * 100}%`;
-      hotspot.style.height = `${entry.h * 100}%`;
+      hotspot.style.height = `${geo.h * 100}%`;
       const label = BibleVerses.formatReference(match);
       hotspot.title = label;
       hotspot.setAttribute('aria-label', `Leer ${label} en la Biblia (Reina-Valera 1960)`);
@@ -563,13 +572,14 @@ async function createVerseLayer(pageElement, page, viewport, pageNumber) {
     // Keep only the parts that really exist (PDF extraction sometimes merges digits).
     match.parts = match.parts.filter(part => BibleVerses.referenceIsValid({ ...match, parts: [part] }, data));
     if (!match.parts.length) continue;
+    const geo = verseHotspotGeometry(line.y / viewport.height, Math.max(lineHeight, 10) / viewport.height, viewport.height);
     const hotspot = document.createElement('button');
     hotspot.type = 'button';
     hotspot.className = 'verseRef';
     hotspot.style.left = `${(startX / viewport.width) * 100}%`;
-    hotspot.style.top = `${(line.y / viewport.height) * 100}%`;
+    hotspot.style.top = `${geo.y * 100}%`;
     hotspot.style.width = `${((endX - startX) / viewport.width) * 100}%`;
-    hotspot.style.height = `${(Math.max(lineHeight, 10) / viewport.height) * 100}%`;
+    hotspot.style.height = `${geo.h * 100}%`;
     const label = BibleVerses.formatReference(match);
     hotspot.title = label;
     hotspot.setAttribute('aria-label', `Leer ${label} en la Biblia (Reina-Valera 1960)`);
