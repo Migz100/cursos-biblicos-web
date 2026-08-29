@@ -20,6 +20,7 @@ let renderSequence = 0;
 let pageMetrics = [];
 let scrollFrame = null;
 let fieldCatalog = { documents: {} };
+let verseCatalog = { documents: {} };
 let answerState = { values: {}, fields: {} };
 let clearBackup = null;
 let clearTimer = null;
@@ -476,6 +477,34 @@ function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
 // Tap any Bible reference (Juan 3:16, Apoc. 14:6-12...) to read the full verse.
 async function createVerseLayer(pageElement, page, viewport, pageNumber) {
   if (typeof BibleVerses === 'undefined') return;
+  // OCR-generated catalog covers lessons whose PDFs have no usable text layer.
+  const verseDocument = verseCatalog.documents?.[`${cid}|${lesson?.id}`] ||
+    verseCatalog.documents?.[`${cid}|${lesson?.legacyNumber}`];
+  const catalogRefs = verseDocument && (!verseDocument.url || cleanPath(verseDocument.url) === cleanPath(lesson.url))
+    ? verseDocument.pages?.[String(pageNumber)]
+    : null;
+  if (catalogRefs) {
+    if (!catalogRefs.length) return;
+    const layer = document.createElement('div');
+    layer.className = 'verseLayer';
+    for (const entry of catalogRefs) {
+      const match = { bookId: entry.bookId, bookName: entry.bookName, parts: entry.parts };
+      const hotspot = document.createElement('button');
+      hotspot.type = 'button';
+      hotspot.className = 'verseRef';
+      hotspot.style.left = `${entry.x * 100}%`;
+      hotspot.style.top = `${entry.y * 100}%`;
+      hotspot.style.width = `${entry.w * 100}%`;
+      hotspot.style.height = `${entry.h * 100}%`;
+      const label = BibleVerses.formatReference(match);
+      hotspot.title = label;
+      hotspot.setAttribute('aria-label', `Leer ${label} en la Biblia (Reina-Valera 1960)`);
+      hotspot.addEventListener('click', () => openVersePopup(match));
+      layer.appendChild(hotspot);
+    }
+    pageElement.appendChild(layer);
+    return;
+  }
   const textContent = await page.getTextContent();
   const items = [];
   for (const item of textContent.items) {
@@ -968,13 +997,15 @@ function clearOrRestoreAnswers() {
 }
 
 async function init() {
-  const [catalogResponse, fieldsResponse] = await Promise.all([
+  const [catalogResponse, fieldsResponse, versesResponse] = await Promise.all([
     fetch('/api/catalog', { cache: 'no-store' }),
-    fetch('/assets/answer-fields.json', { cache: 'no-store' }).catch(() => null)
+    fetch('/assets/answer-fields.json', { cache: 'no-store' }).catch(() => null),
+    fetch('/assets/verse-fields.json', { cache: 'no-store' }).catch(() => null)
   ]);
   if (!catalogResponse.ok) throw new Error('catalog');
   const data = await catalogResponse.json();
   if (fieldsResponse?.ok) fieldCatalog = await fieldsResponse.json();
+  if (versesResponse?.ok) verseCatalog = await versesResponse.json();
   course = data.courses.find(item => item.id === cid);
   if (!course) { location.href = 'index.html'; return; }
   lessons = course.lessons.filter(item => item.type === 'pdf');
