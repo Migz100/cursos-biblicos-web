@@ -11,7 +11,7 @@
     { id: '02-exodo', name: 'Éxodo', aliases: ['éxodo', 'exodo', 'éxo', 'exo', 'éx', 'ex'] },
     { id: '03-levitico', name: 'Levítico', aliases: ['levítico', 'levitico', 'lv', 'lev'] },
     { id: '04-numeros', name: 'Números', aliases: ['números', 'numeros', 'núm', 'num', 'nm'] },
-    { id: '05-deuteronomio', name: 'Deuteronomio', aliases: ['deuteronomio', 'dt', 'deut'] },
+    { id: '05-deuteronomio', name: 'Deuteronomio', aliases: ['deuteronomio', 'deuteronÃ³mio', 'dt', 'deut'] },
     { id: '06-josue', name: 'Josué', aliases: ['josué', 'josue', 'jos'] },
     { id: '07-jueces', name: 'Jueces', aliases: ['jueces', 'juec', 'jue'] },
     { id: '08-rut', name: 'Rut', aliases: ['rut'] },
@@ -37,7 +37,7 @@
     { id: '28-oseas', name: 'Oseas', aliases: ['oseas'] },
     { id: '29-joel', name: 'Joel', aliases: ['joel'] },
     { id: '30-amos', name: 'Amós', aliases: ['amós', 'amos'] },
-    { id: '31-obdias', name: 'Abdías', aliases: ['abdías', 'abdias', 'abd'] },
+    { id: '31-abdias', name: 'Abdías', aliases: ['abdías', 'abdias', 'abd'] },
     { id: '32-jonas', name: 'Jonás', aliases: ['jonás', 'jonas', 'jon'] },
     { id: '33-miqueas', name: 'Miqueas', aliases: ['miqueas', 'miq'] },
     { id: '34-nahum', name: 'Nahúm', aliases: ['nahúm', 'nahum', 'nah'] },
@@ -66,8 +66,8 @@
     { id: '57-filemon', name: 'Filemón', aliases: ['filemón', 'filemon', 'flm', 'filem'] },
     { id: '58-hebreos', name: 'Hebreos', aliases: ['hebreos', 'heb', 'hb'] },
     { id: '59-santiago', name: 'Santiago', aliases: ['santiago', 'stg', 'sant'] },
-    { id: '60-1-pedro', name: '1 Pedro', aliases: ['1 pedro', '1 ped', '1 p'] },
-    { id: '61-2-pedro', name: '2 Pedro', aliases: ['2 pedro', '2 ped', '2 p'] },
+    { id: '60-1-pedro', name: '1 Pedro', aliases: ['1 pedro', '1 ped', '1 p', '1 s. pedro', '1 s pedro', '1 san pedro'] },
+    { id: '61-2-pedro', name: '2 Pedro', aliases: ['2 pedro', '2 ped', '2 p', '2 s. pedro', '2 s pedro', '2 san pedro'] },
     { id: '62-1-juan', name: '1 Juan', aliases: ['1 juan', '1 jn', '1 j'] },
     { id: '63-2-juan', name: '2 Juan', aliases: ['2 juan', '2 jn', '2 j'] },
     { id: '64-3-juan', name: '3 Juan', aliases: ['3 juan', '3 jn', '3 j'] },
@@ -77,31 +77,66 @@
 
   const byId = new Map(BOOKS.map(book => [book.id, book]));
 
+  function escapedAlias(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*');
+  }
+
+  function aliasExpression(alias) {
+    const numbered = alias.match(/^([123])\s*(.+)$/);
+    if (!numbered) return escapedAlias(alias);
+    const number = Number(numbered[1]);
+    const roman = ['i', 'ii', 'iii'][number - 1];
+    const word = ['primera', 'segunda', 'tercera'][number - 1];
+    const prefix = `(?:${number}\\s*[.ªº°ao]?\\s*(?:de\\s*)?|${roman}\\s+(?:de\\s+)?|${word}\\s+(?:de\\s+)?)`;
+    return `${prefix}${escapedAlias(numbered[2])}`;
+  }
+
+  function aliasKey(value) {
+    let text = String(value || '').toLocaleLowerCase('es').normalize('NFC').trim();
+    text = text
+      .replace(/^primera\s+(?:de\s+)?/, '1 ')
+      .replace(/^segunda\s+(?:de\s+)?/, '2 ')
+      .replace(/^tercera\s+(?:de\s+)?/, '3 ')
+      .replace(/^iii\s+(?:de\s+)?/, '3 ')
+      .replace(/^ii\s+(?:de\s+)?/, '2 ')
+      .replace(/^i\s+(?:de\s+)?/, '1 ')
+      .replace(/^([123])\s*[.ªº°ao]?\s*(?:de\s*)?/, '$1');
+    return text.replace(/[.\s]+/g, '');
+  }
+
   // Longest alias first so "1 Juan" beats "Juan".
   const aliasPattern = BOOKS
     .flatMap(book => book.aliases.map(alias => ({ alias, book })))
     .sort((a, b) => b.alias.length - a.alias.length)
-    .map(entry => entry.alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*'))
+    .map(entry => aliasExpression(entry.alias))
     .join('|');
 
+  const VERSE_SPEC_PATTERN = '\\d{1,3}(?:\\s*[-–—]\\s*\\d{1,3})?(?:\\s*,\\s*\\d{1,3}(?:\\s*[-–—]\\s*\\d{1,3})?)*';
   // "2 Timoteo 3:16", "Juan14:1-3", "Apoc. 14:6-12", "Salmos 34", "1 Juan 5:11-13"
   const REFERENCE_RE = new RegExp(
-    `(?<![A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ])(${aliasPattern})(?![A-Za-zÁÉÍÓÚÜÑáéíóúüñ])\\.?\\s*(\\d{1,3})(?:\\s*[:.]\\s*(\\d{1,3}(?:\\s*[-–—]\\s*\\d{1,3})?(?:\\s*,\\s*\\d{1,3}(?:\\s*[-–—]\\s*\\d{1,3})?)*))?`,
+    `(?<![A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ])(${aliasPattern})(?![A-Za-zÁÉÍÓÚÜÑáéíóúüñ])\\.?\\s*(\\d{1,3})(?:(?:\\s*[:.]\\s*(${VERSE_SPEC_PATTERN}))|(?:\\s*[-–—]\\s*(\\d{1,3})(?!\\s*[:.])))?`,
     'gi'
   );
   // Same-book continuation: "1 Pedro 2:2; 5:7" captures "; 5:7".
-  const CONTINUATION_RE = /^\s*;\s*(\d{1,3})\s*[:.]\s*(\d{1,3}(?:\s*[-–—]\s*\d{1,3})?(?:\s*,\s*\d{1,3}(?:\s*[-–—]\s*\d{1,3})?)*)/;
+  const CONTINUATION_RE = new RegExp(
+    `^\\s*;\\s*(\\d{1,3})(?:(?:\\s*[:.]\\s*(${VERSE_SPEC_PATTERN}))|(?:\\s*[-–—]\\s*(\\d{1,3})))?`,
+    'i'
+  );
+  const EXPLICIT_BOOK_AFTER_SEMICOLON_RE = new RegExp(
+    `^\\s*;\\s*(?:${aliasPattern})(?![A-Za-zÃÃ‰ÃÃ“ÃšÃœÃ‘Ã¡Ã©Ã­Ã³ÃºÃ¼Ã±])\\.?\\s*\\d{1,3}`,
+    'i'
+  );
   // Bare "18:4" style citations inherit the last book seen (reader passes it per page).
   const BARE_RE = /(?<![A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ(:])\(?\s*(\d{1,3})\s*:\s*(\d{1,3}(?:\s*[-–—]\s*\d{1,3})?(?:\s*,\s*\d{1,3}(?:\s*[-–—]\s*\d{1,3})?)*)/g;
 
   // Books with a single chapter: "Judas 9" means chapter 1, verse 9.
-  const SINGLE_CHAPTER = new Set(['31-obdias', '57-filemon', '63-2-juan', '64-3-juan', '65-judas']);
+  const SINGLE_CHAPTER = new Set(['31-abdias', '57-filemon', '63-2-juan', '64-3-juan', '65-judas']);
 
   const BOOK_BY_ALIAS = new Map();
-  BOOKS.forEach(book => book.aliases.forEach(alias => BOOK_BY_ALIAS.set(alias.replace(/\s+/g, ''), book)));
+  BOOKS.forEach(book => book.aliases.forEach(alias => BOOK_BY_ALIAS.set(aliasKey(alias), book)));
 
   function bookFromAlias(text) {
-    return BOOK_BY_ALIAS.get(String(text || '').toLowerCase().replace(/\s+/g, '').trim()) || null;
+    return BOOK_BY_ALIAS.get(aliasKey(text)) || null;
   }
 
   function expandVerseSpec(spec) {
@@ -110,11 +145,25 @@
       const range = part.match(/^(\d{1,3})\s*[-–—]\s*(\d{1,3})$/);
       if (range) {
         const start = Number(range[1]);
-        const end = Math.min(Number(range[2]), start + 30);
+        const requestedEnd = Number(range[2]);
+        if (start < 1 || requestedEnd < start) return;
+        const end = Math.min(requestedEnd, start + 175);
         for (let verse = start; verse <= end; verse += 1) verses.add(verse);
-      } else if (/^\d{1,3}$/.test(part.trim())) verses.add(Number(part.trim()));
+      } else if (/^\d{1,3}$/.test(part.trim()) && Number(part.trim()) > 0) verses.add(Number(part.trim()));
     });
     return [...verses].sort((a, b) => a - b);
+  }
+
+  function expandChapterRange(start, end = start) {
+    const first = Number(start);
+    const last = Number(end);
+    if (!Number.isInteger(first) || !Number.isInteger(last) || first < 1 || last < first || last - first > 149) return [];
+    return Array.from({ length: last - first + 1 }, (_, index) => ({ chapter: first + index, verses: [] }));
+  }
+
+  function startsInsideUrl(source, index) {
+    const prefix = source.slice(Math.max(0, index - 160), index);
+    return /(?:https?:\/\/|www\.|mailto:)[^\s<>()]*$/i.test(prefix) || /[\w.+-]+@[^\s<>()]*$/i.test(prefix);
   }
 
   // Returns [{ raw, index, bookId, bookName, parts: [{ chapter, verses }] }].
@@ -125,19 +174,43 @@
     REFERENCE_RE.lastIndex = 0;
     let match;
     while ((match = REFERENCE_RE.exec(source))) {
+      if (startsInsideUrl(source, match.index)) continue;
       const book = bookFromAlias(match[1]);
       if (!book) continue;
       let chapter = Number(match[2]);
       let verses = expandVerseSpec(match[3] || '');
+      let parts;
+      if (match[3] && !verses.length) continue;
       if (SINGLE_CHAPTER.has(book.id) && !match[3]) {
-        verses = [chapter];
+        verses = match[4] ? expandVerseSpec(`${chapter}-${match[4]}`) : [chapter];
+        if (!verses.length) continue;
         chapter = 1;
+        parts = [{ chapter, verses }];
+      } else if (match[4]) {
+        parts = expandChapterRange(chapter, Number(match[4]));
+        if (!parts.length) continue;
+      } else {
+        parts = [{ chapter, verses }];
       }
-      const parts = [{ chapter, verses }];
       let end = match.index + match[0].length;
       let continuation;
-      while ((continuation = CONTINUATION_RE.exec(source.slice(end)))) {
-        parts.push({ chapter: Number(continuation[1]), verses: expandVerseSpec(continuation[2]) });
+      while (!EXPLICIT_BOOK_AFTER_SEMICOLON_RE.test(source.slice(end)) && (continuation = CONTINUATION_RE.exec(source.slice(end)))) {
+        const first = Number(continuation[1]);
+        const verseSpec = continuation[2] || '';
+        const rangeEnd = continuation[3] ? Number(continuation[3]) : null;
+        if (verseSpec) {
+          const nextVerses = expandVerseSpec(verseSpec);
+          if (!nextVerses.length) break;
+          parts.push({ chapter: first, verses: nextVerses });
+        } else if (parts.at(-1)?.verses.length) {
+          const nextVerses = rangeEnd ? expandVerseSpec(`${first}-${rangeEnd}`) : [first];
+          if (!nextVerses.length) break;
+          parts.push({ chapter: parts.at(-1).chapter, verses: nextVerses });
+        } else {
+          const nextChapters = expandChapterRange(first, rangeEnd || first);
+          if (!nextChapters.length) break;
+          parts.push(...nextChapters);
+        }
         end += continuation[0].length;
       }
       found.push({
@@ -238,5 +311,5 @@
     });
   }
 
-  return { BOOKS, byId, findReferences, expandVerseSpec, formatReference, resolveReference, fetchBook, normalizeExtracted, referenceIsValid };
+  return { BOOKS, byId, findReferences, expandVerseSpec, expandChapterRange, formatReference, resolveReference, fetchBook, normalizeExtracted, referenceIsValid };
 });

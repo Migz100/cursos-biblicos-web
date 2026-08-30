@@ -5,6 +5,8 @@ const cid = params.get('c') || '1';
 const lessonParam = params.get('l') || '1-01';
 const soloMode = params.get('solo') === '1';
 const ANSWER_PREFIX = 'cursosBiblicosText_v1_';
+const ZOOM_KEY = 'cursosBiblicosReaderZoom_v2';
+const ROTATION_PREFIX = 'cursosBiblicosReaderRotation_v1_';
 const MIN_ZOOM = 0.65;
 const MAX_ZOOM = 2.5;
 
@@ -13,7 +15,8 @@ let lessons = [];
 let lesson = null;
 let pdfDoc = null;
 let pageNum = 1;
-let zoomFactor = 1;
+let zoomFactor = preferredZoom();
+let pageRotations = {};
 let renderTasks = new Map();
 let renderObserver = null;
 let renderSequence = 0;
@@ -27,6 +30,14 @@ let clearTimer = null;
 let lastAreaWidth = 0;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.mjs';
+
+function preferredZoom() {
+  try {
+    const stored = Number(localStorage.getItem(ZOOM_KEY));
+    if (stored >= MIN_ZOOM && stored <= MAX_ZOOM) return stored;
+  } catch {}
+  return 1;
+}
 
 function shortHash(value) {
   let hash = 2166136261;
@@ -66,7 +77,44 @@ function currentFieldDocument() {
   const document = fieldCatalog.documents?.[`${cid}|${lesson?.id}`] ||
     fieldCatalog.documents?.[`${cid}|${lesson?.legacyNumber}`];
   if (!document) return null;
-  return !document.url || cleanPath(document.url) === cleanPath(lesson.url) ? document : null;
+  if (document.url && cleanPath(document.url) !== cleanPath(lesson.url)) return null;
+  // A Blob URL can be overwritten while keeping the same pathname.  The field
+  // catalog records every source page (including pages without fields), so a
+  // page-count mismatch proves that its coordinates belong to an older PDF.
+  const catalogPageCount = Object.keys(document.pages || {}).length;
+  if (catalogPageCount && pdfDoc?.numPages && catalogPageCount !== pdfDoc.numPages) return null;
+  return document;
+}
+
+function rotationKey() {
+  return `${ROTATION_PREFIX}${cid}_${lesson?.id || lessonParam}_${shortHash(lesson?.url || 'sin-archivo')}`;
+}
+
+function loadRotations() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(rotationKey()) || '{}');
+    pageRotations = Object.fromEntries(Object.entries(stored).filter(([page, degrees]) =>
+      /^\d+$/.test(page) && [0, 90, 180, 270].includes(Number(degrees))
+    ));
+  } catch {
+    pageRotations = {};
+  }
+}
+
+function saveRotations() {
+  try { localStorage.setItem(rotationKey(), JSON.stringify(pageRotations)); } catch {}
+}
+
+function rotateGeometry(field, degrees = 0) {
+  const rotation = ((Number(degrees) % 360) + 360) % 360;
+  const x = Number(field.x) || 0;
+  const y = Number(field.y) || 0;
+  const w = Number(field.w) || 0;
+  const h = Number(field.h) || 0;
+  if (rotation === 90) return { ...field, x: 1 - y - h, y: x, w: h, h: w, rotated: true };
+  if (rotation === 180) return { ...field, x: 1 - x - w, y: 1 - y - h, w, h, rotated: true };
+  if (rotation === 270) return { ...field, x: y, y: 1 - x - w, w: h, h: w, rotated: true };
+  return { ...field };
 }
 
 function fieldId(page, field) {
@@ -77,12 +125,15 @@ function fieldId(page, field) {
 function mergeFields(fields) {
   const merged = [];
   for (const field of fields) {
+    const maxHeight = field.native || field.rotated ? 1 : 0.25;
     const normalized = {
       x: Math.max(0, Math.min(0.99, Number(field.x) || 0)),
       y: Math.max(0, Math.min(0.99, Number(field.y) || 0)),
       w: Math.max(0.04, Math.min(1, Number(field.w) || 0.2)),
-      h: Math.max(0.018, Math.min(0.25, Number(field.h) || 0.038)),
+      h: Math.max(0.018, Math.min(maxHeight, Number(field.h) || 0.038)),
       kind: ['box', 'widget', 'check'].includes(field.kind) ? field.kind : 'line',
+      ...(field.native ? { native: true } : {}),
+      ...(field.rotated ? { rotated: true } : {}),
       ...(field.id ? { id: field.id } : {})
     };
     normalized.w = Math.min(normalized.w, 1 - normalized.x);
@@ -338,32 +389,52 @@ function detectedCheckboxes(data, width, height, minY, maxY) {
   return found;
 }
 
-async function annotationFields(page, viewport) {
-  const annotations = await page.getAnnotations({ intent: 'display' });
+function annotationRectangle(rect, viewport) {
+  const first = [rect[0], rect[1]];
+  const second = [rect[2], rect[3]];
+  pdfjsLib.Util.applyTransform(first, viewport.transform);
+  pdfjsLib.Util.applyTransform(second, viewport.transform);
+  const left = Math.min(first[0], second[0]);
+  const top = Math.min(first[1], second[1]);
+  return {
+    x: left / viewport.width,
+    y: top / viewport.height,
+    w: Math.abs(second[0] - first[0]) / viewport.width,
+    h: Math.abs(second[1] - first[1]) / viewport.height
+  };
+}
+
+function minimumTargetGeometry(geometry, viewport, minimumPixels = 44) {
+  const minimumWidth = Math.min(1, minimumPixels / Math.max(1, viewport.width));
+  const minimumHeight = Math.min(1, minimumPixels / Math.max(1, viewport.height));
+  const originalWidth = Number(geometry.w) || 0;
+  const originalHeight = Number(geometry.h) || 0;
+  const width = Math.max(originalWidth, minimumWidth);
+  const height = Math.max(originalHeight, minimumHeight);
+  return {
+    ...geometry,
+    x: Math.max(0, Math.min(1 - width, (Number(geometry.x) || 0) - (width - originalWidth) / 2)),
+    y: Math.max(0, Math.min(1 - height, (Number(geometry.y) || 0) - (height - originalHeight) / 2)),
+    w: width,
+    h: height
+  };
+}
+
+function annotationFields(annotations, viewport) {
   return annotations
     .filter(annotation => (annotation.fieldType === 'Tx' || (annotation.fieldType === 'Btn' && annotation.checkBox)) && Array.isArray(annotation.rect))
     .map(annotation => {
-      const first = [annotation.rect[0], annotation.rect[1]];
-      const second = [annotation.rect[2], annotation.rect[3]];
-      pdfjsLib.Util.applyTransform(first, viewport.transform);
-      pdfjsLib.Util.applyTransform(second, viewport.transform);
-      const rectangle = [first[0], first[1], second[0], second[1]];
-      const left = Math.min(rectangle[0], rectangle[2]);
-      const top = Math.min(rectangle[1], rectangle[3]);
       return {
         id: `widget-${annotation.id}`,
-        x: left / viewport.width,
-        y: top / viewport.height,
-        w: Math.abs(rectangle[2] - rectangle[0]) / viewport.width,
-        h: Math.abs(rectangle[3] - rectangle[1]) / viewport.height,
-        kind: annotation.fieldType === 'Btn' ? 'check' : 'widget'
+        ...annotationRectangle(annotation.rect, viewport),
+        kind: annotation.fieldType === 'Btn' ? 'check' : 'widget',
+        native: true
       };
     });
 }
 
 // Rects (fractions of the page) of every printed text glyph run.
-async function printedTextRects(page, viewport) {
-  const textContent = await page.getTextContent();
+function printedTextRects(textContent, viewport) {
   const rects = [];
   for (const item of textContent.items) {
     if (!item.str || !item.str.trim()) continue;
@@ -398,23 +469,40 @@ function overlapsPrintedText(field, rects) {
   return false;
 }
 
-async function fieldsForPage(page, viewport, canvas, pageNumber) {
-  const annotations = await annotationFields(page, viewport);
+function filterAndRotateFields(fields, rects, extraRotation = 0) {
+  // Decide whether a guessed field covers printed wording in the PDF's
+  // canonical orientation. Rotating both sides before this test introduces
+  // rounding differences that can make a control appear or disappear.
+  const filtered = fields.filter(field => field.native || !overlapsPrintedText(field, rects));
+  return mergeFields(filtered.map(field => rotateGeometry(field, extraRotation)));
+}
+
+function fieldsForPage(viewport, canvas, pageNumber, annotations, textContent, extraRotation = 0, canonicalViewport = viewport, canonicalCanvas = canvas) {
+  const fieldsFromAnnotations = annotationFields(annotations, canonicalViewport);
   const fieldDocument = currentFieldDocument();
-  const needsFilter = fieldDocument?.pages?.[String(pageNumber)]?.length || (!annotations.length && !fieldDocument);
-  if (!needsFilter && annotations.length) return mergeFields(annotations);
+  const needsFilter = fieldDocument?.pages?.[String(pageNumber)]?.length || (!fieldsFromAnnotations.length && !fieldDocument);
+  if (!needsFilter && fieldsFromAnnotations.length) {
+    return mergeFields(fieldsFromAnnotations.map(field => rotateGeometry(field, extraRotation)));
+  }
   let detected;
   if (fieldDocument && Object.prototype.hasOwnProperty.call(fieldDocument.pages || {}, String(pageNumber))) {
-    detected = mergeFields([...annotations, ...(fieldDocument.pages[String(pageNumber)] || [])]);
-  } else if (annotations.length) {
-    return mergeFields(annotations);
+    const catalogFields = fieldDocument.pages[String(pageNumber)] || [];
+    detected = mergeFields([...fieldsFromAnnotations, ...catalogFields]);
+  } else if (fieldsFromAnnotations.length) {
+    return mergeFields(fieldsFromAnnotations.map(field => rotateGeometry(field, extraRotation)));
   } else {
-    detected = detectedCanvasFields(canvas);
+    // Without extractable text there is no reliable way to distinguish an
+    // empty square/line from a printed letter or border. Prefer no guessed
+    // control to an overlay that hides lesson wording; native annotations and
+    // a matching field catalog remain available on image-only pages.
+    const hasPrintedText = (textContent.items || []).some(item => String(item.str || '').trim());
+    detected = hasPrintedText ? detectedCanvasFields(canonicalCanvas) : [];
   }
   if (!detected.length) return [];
-  const rects = await printedTextRects(page, viewport);
-  // Catalog/canvas guesses never sit on top of printed glyphs; native widgets do what they want.
-  return mergeFields(detected.filter(field => field.kind === 'widget' || !overlapsPrintedText(field, rects)));
+  const rects = printedTextRects(textContent, canonicalViewport);
+  // Catalog/canvas guesses never sit on top of printed glyphs. Native AcroForm
+  // widgets are authoritative even when their rectangle touches printed text.
+  return filterAndRotateFields(detected, rects, extraRotation);
 }
 
 function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
@@ -423,6 +511,7 @@ function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
   let visibleCount = 0;
   fields.forEach((field, index) => {
     const id = fieldId(pageNumber, field);
+    const target = minimumTargetGeometry(field, viewport);
     answerState.fields[id] = { page: pageNumber, ...field };
     if (field.kind === 'check') {
       const toggle = document.createElement('button');
@@ -432,10 +521,10 @@ function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
       toggle.setAttribute('aria-label', `Marcar casilla ${index + 1} de la página ${pageNumber}`);
       toggle.setAttribute('aria-pressed', String(answerState.values[id] === '1'));
       if (answerState.values[id] === '1') toggle.classList.add('on');
-      toggle.style.left = `${field.x * 100}%`;
-      toggle.style.top = `${field.y * 100}%`;
-      toggle.style.width = `${field.w * 100}%`;
-      toggle.style.height = `${field.h * 100}%`;
+      toggle.style.left = `${target.x * 100}%`;
+      toggle.style.top = `${target.y * 100}%`;
+      toggle.style.width = `${target.w * 100}%`;
+      toggle.style.height = `${target.h * 100}%`;
       toggle.addEventListener('click', () => {
         const next = answerState.values[id] === '1' ? '' : '1';
         if (next) answerState.values[id] = next;
@@ -456,10 +545,10 @@ function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
     input.setAttribute('aria-label', `Respuesta ${index + 1} de la página ${pageNumber}`);
     input.setAttribute('autocomplete', 'off');
     input.setAttribute('spellcheck', 'true');
-    input.style.left = `${field.x * 100}%`;
-    input.style.top = `${field.y * 100}%`;
-    input.style.width = `${field.w * 100}%`;
-    input.style.height = `${field.h * 100}%`;
+    input.style.left = `${target.x * 100}%`;
+    input.style.top = `${target.y * 100}%`;
+    input.style.width = `${target.w * 100}%`;
+    input.style.height = `${target.h * 100}%`;
     input.style.fontSize = `${Math.max(14, Math.min(22, viewport.height * 0.018))}px`;
     input.addEventListener('input', () => {
       answerState.values[id] = input.value;
@@ -474,16 +563,80 @@ function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
   if (pageNumber === pageNum) updateAnswerHint();
 }
 
-// Tap any Bible reference (Juan 3:16, Apoc. 14:6-12...) to read the full verse.
-// Grows a hotspot to a tappable 22px without shifting its visual center.
-function verseHotspotGeometry(y, h, viewportHeight) {
-  const px = h * viewportHeight;
-  if (px >= 22) return { y, h };
-  const extra = (22 - px) / viewportHeight;
-  return { y: Math.max(0, y - extra / 2), h: h + extra };
+function safeExternalUrl(value) {
+  try {
+    const url = new URL(value, location.href);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 
-async function createVerseLayer(pageElement, page, viewport, pageNumber) {
+async function destinationPageNumber(destination) {
+  try {
+    const explicit = typeof destination === 'string' ? await pdfDoc.getDestination(destination) : destination;
+    if (!Array.isArray(explicit) || !explicit.length) return null;
+    const target = explicit[0];
+    if (Number.isInteger(target)) return target + 1;
+    return (await pdfDoc.getPageIndex(target)) + 1;
+  } catch {
+    return null;
+  }
+}
+
+async function createPdfLinkLayer(pageElement, annotations, viewport, pageNumber) {
+  const links = annotations.filter(annotation => Array.isArray(annotation.rect) && (annotation.url || annotation.dest));
+  if (!links.length) return;
+  const layer = document.createElement('div');
+  layer.className = 'pdfLinkLayer';
+  for (const [index, annotation] of links.entries()) {
+    const geometry = minimumTargetGeometry(annotationRectangle(annotation.rect, viewport), viewport);
+    const external = safeExternalUrl(annotation.url);
+    const destination = external ? null : await destinationPageNumber(annotation.dest);
+    if (!external && !destination) continue;
+    const control = document.createElement(external ? 'a' : 'button');
+    control.className = 'pdfLink';
+    control.style.left = `${geometry.x * 100}%`;
+    control.style.top = `${geometry.y * 100}%`;
+    control.style.width = `${geometry.w * 100}%`;
+    control.style.height = `${geometry.h * 100}%`;
+    const label = annotation.title || (external ? 'Abrir enlace de la lección en otra pestaña' : `Ir a la página ${destination}`);
+    control.title = label;
+    control.setAttribute('aria-label', `${label}, página ${pageNumber}, enlace ${index + 1}`);
+    if (external) {
+      control.href = external;
+      control.target = '_blank';
+      control.rel = 'noopener noreferrer';
+    } else {
+      control.type = 'button';
+      control.addEventListener('click', () => scrollToPage(destination));
+    }
+    layer.appendChild(control);
+  }
+  if (layer.childElementCount) pageElement.appendChild(layer);
+}
+
+function createAccessiblePageText(pageElement, canvas, textContent, pageNumber) {
+  const parts = [];
+  for (const item of textContent.items || []) {
+    const text = String(item.str || '').trim();
+    if (text) parts.push(text);
+    if (item.hasEOL && parts.at(-1) !== '\n') parts.push('\n');
+  }
+  const normalized = parts.join(' ').replace(/\s*\n\s*/g, '\n').replace(/[ \t]+/g, ' ').trim();
+  const description = document.createElement('div');
+  description.className = 'srOnly accessiblePageText';
+  description.id = `accessible-page-${pageNumber}`;
+  description.textContent = normalized
+    ? `Texto de la página ${pageNumber}: ${normalized}`
+    : `La página ${pageNumber} es una imagen sin texto seleccionable. Usa Texto más para ampliarla.`;
+  canvas.setAttribute('aria-describedby', description.id);
+  pageElement.appendChild(description);
+  pageElement.dataset.hasAccessibleText = String(Boolean(normalized));
+}
+
+// Tap any Bible reference (Juan 3:16, Apoc. 14:6-12...) to read the full verse.
+async function createVerseLayer(pageElement, viewport, pageNumber, textContent, extraRotation = 0) {
   if (typeof BibleVerses === 'undefined') return;
   // OCR-generated catalog covers lessons whose PDFs have no usable text layer.
   const verseDocument = verseCatalog.documents?.[`${cid}|${lesson?.id}`] ||
@@ -495,26 +648,34 @@ async function createVerseLayer(pageElement, page, viewport, pageNumber) {
     if (!catalogRefs.length) return;
     const layer = document.createElement('div');
     layer.className = 'verseLayer';
-    for (const entry of catalogRefs) {
+    const uniqueBooks = [...new Set(catalogRefs.map(entry => entry.bookId))];
+    const bookData = new Map(await Promise.all(uniqueBooks.map(id => BibleVerses.fetchBook(id).then(data => [id, data]))));
+    let rejected = 0;
+    for (const originalEntry of catalogRefs) {
+      const entry = rotateGeometry(originalEntry, extraRotation);
       const match = { bookId: entry.bookId, bookName: entry.bookName, parts: entry.parts };
-      const geo = verseHotspotGeometry(entry.y, entry.h, viewport.height);
+      if (!BibleVerses.referenceIsValid(match, bookData.get(match.bookId))) {
+        rejected += 1;
+        continue;
+      }
+      const target = minimumTargetGeometry(entry, viewport);
       const hotspot = document.createElement('button');
       hotspot.type = 'button';
       hotspot.className = 'verseRef';
-      hotspot.style.left = `${entry.x * 100}%`;
-      hotspot.style.top = `${geo.y * 100}%`;
-      hotspot.style.width = `${entry.w * 100}%`;
-      hotspot.style.height = `${geo.h * 100}%`;
+      hotspot.style.left = `${target.x * 100}%`;
+      hotspot.style.top = `${target.y * 100}%`;
+      hotspot.style.width = `${target.w * 100}%`;
+      hotspot.style.height = `${target.h * 100}%`;
       const label = BibleVerses.formatReference(match);
       hotspot.title = label;
       hotspot.setAttribute('aria-label', `Leer ${label} en la Biblia (Reina-Valera 1960)`);
       hotspot.addEventListener('click', () => openVersePopup(match));
       layer.appendChild(hotspot);
     }
+    pageElement.dataset.invalidVerseCount = String(rejected);
     pageElement.appendChild(layer);
     return;
   }
-  const textContent = await page.getTextContent();
   const items = [];
   for (const item of textContent.items) {
     if (!item.str || !item.str.trim()) continue;
@@ -572,14 +733,19 @@ async function createVerseLayer(pageElement, page, viewport, pageNumber) {
     // Keep only the parts that really exist (PDF extraction sometimes merges digits).
     match.parts = match.parts.filter(part => BibleVerses.referenceIsValid({ ...match, parts: [part] }, data));
     if (!match.parts.length) continue;
-    const geo = verseHotspotGeometry(line.y / viewport.height, Math.max(lineHeight, 10) / viewport.height, viewport.height);
+    const target = minimumTargetGeometry({
+      x: startX / viewport.width,
+      y: line.y / viewport.height,
+      w: (endX - startX) / viewport.width,
+      h: Math.max(lineHeight, 10) / viewport.height
+    }, viewport);
     const hotspot = document.createElement('button');
     hotspot.type = 'button';
     hotspot.className = 'verseRef';
-    hotspot.style.left = `${(startX / viewport.width) * 100}%`;
-    hotspot.style.top = `${geo.y * 100}%`;
-    hotspot.style.width = `${((endX - startX) / viewport.width) * 100}%`;
-    hotspot.style.height = `${geo.h * 100}%`;
+    hotspot.style.left = `${target.x * 100}%`;
+    hotspot.style.top = `${target.y * 100}%`;
+    hotspot.style.width = `${target.w * 100}%`;
+    hotspot.style.height = `${target.h * 100}%`;
     const label = BibleVerses.formatReference(match);
     hotspot.title = label;
     hotspot.setAttribute('aria-label', `Leer ${label} en la Biblia (Reina-Valera 1960)`);
@@ -591,6 +757,7 @@ async function createVerseLayer(pageElement, page, viewport, pageNumber) {
 }
 
 let verseModal = null;
+let verseReturnFocus = null;
 
 function ensureVerseModal() {
   if (verseModal) return verseModal;
@@ -600,7 +767,7 @@ function ensureVerseModal() {
   modal.innerHTML = `
     <div class="verseCard" role="dialog" aria-modal="true" aria-labelledby="verseTitle">
       <h2 class="verseTitle" id="verseTitle"></h2>
-      <div class="verseText" id="verseText"></div>
+      <div class="verseText" id="verseText" aria-live="polite"></div>
       <p class="verseVersion">Reina-Valera 1960</p>
       <div class="verseActions">
         <button type="button" class="wBtn" id="verseCopy">Copiar</button>
@@ -608,7 +775,12 @@ function ensureVerseModal() {
       </div>
     </div>`;
   document.body.appendChild(modal);
-  const close = () => { modal.hidden = true; };
+  const close = () => {
+    modal.hidden = true;
+    const target = verseReturnFocus;
+    verseReturnFocus = null;
+    if (target?.isConnected) target.focus();
+  };
   modal.addEventListener('click', event => { if (event.target === modal) close(); });
   modal.querySelector('#verseClose').addEventListener('click', close);
   modal.querySelector('#verseCopy').addEventListener('click', event => {
@@ -619,7 +791,24 @@ function ensureVerseModal() {
     }).catch(() => {});
   });
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !modal.hidden) close();
+    if (modal.hidden) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      close();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const controls = [...modal.querySelectorAll('button:not([disabled]), a[href]')];
+    if (!controls.length) return;
+    const first = controls[0];
+    const last = controls.at(-1);
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   });
   verseModal = modal;
   return modal;
@@ -631,7 +820,9 @@ async function openVersePopup(ref) {
   const body = modal.querySelector('#verseText');
   title.textContent = BibleVerses.formatReference(ref);
   body.textContent = 'Buscando el texto...';
+  verseReturnFocus = document.activeElement;
   modal.hidden = false;
+  modal.querySelector('#verseClose').focus();
   const blocks = await BibleVerses.resolveReference(ref, 'assets/bible/rvr1960/');
   body.replaceChildren();
   let any = false;
@@ -666,11 +857,12 @@ function pageElement(metric) {
   const page = document.createElement('div');
   page.className = 'pg';
   page.dataset.pageNumber = String(metric.number);
+  page.dataset.rotation = String(metric.extraRotation || 0);
   page.dataset.rendered = 'false';
   page.style.width = `${metric.width}px`;
   page.style.height = `${metric.height}px`;
   page.setAttribute('role', 'group');
-  page.setAttribute('aria-label', `Página ${metric.number} de ${pdfDoc.numPages}`);
+  page.setAttribute('aria-label', 'P\u00e1gina ' + metric.number + ' de ' + pdfDoc.numPages + (metric.extraRotation ? ', girada ' + metric.extraRotation + ' grados' : ''));
   page.appendChild(loadingElement(metric.number));
   return page;
 }
@@ -678,6 +870,18 @@ function pageElement(metric) {
 function cancelRenderTasks() {
   for (const task of renderTasks.values()) task.cancel();
   renderTasks = new Map();
+}
+
+async function renderCanonicalFieldCanvas(page, rotation) {
+  const unitViewport = page.getViewport({ scale: 1, rotation });
+  const scale = 1200 / Math.max(1, unitViewport.width);
+  const viewport = page.getViewport({ scale, rotation });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.ceil(viewport.width));
+  canvas.height = Math.max(1, Math.ceil(viewport.height));
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  await page.render({ canvasContext: context, viewport }).promise;
+  return canvas;
 }
 
 function updateAnswerHint() {
@@ -703,7 +907,7 @@ async function renderPageElement(element, sequence) {
   element.dataset.rendering = 'true';
   const page = await pdfDoc.getPage(pageNumber);
   if (sequence !== renderSequence || element.dataset.rendering !== 'true') return;
-  const viewport = page.getViewport({ scale: metric.scale });
+  const viewport = page.getViewport({ scale: metric.scale, rotation: metric.rotation });
   const dpr = Math.min(2.5, window.devicePixelRatio || 1);
   const canvas = document.createElement('canvas');
   canvas.className = 'pdfCanvas';
@@ -727,10 +931,35 @@ async function renderPageElement(element, sequence) {
     if (renderTasks.get(pageNumber) === task) renderTasks.delete(pageNumber);
   }
   if (sequence !== renderSequence || element.dataset.rendering !== 'true' || !element.isConnected) return;
-  const fields = await fieldsForPage(page, viewport, canvas, pageNumber);
+  const [annotations, textContent] = await Promise.all([
+    page.getAnnotations({ intent: 'display' }),
+    page.getTextContent()
+  ]);
+  const canonicalRotation = ((metric.rotation - metric.extraRotation) % 360 + 360) % 360;
+  const canonicalViewport = page.getViewport({ scale: metric.scale, rotation: canonicalRotation });
+  const fieldDocument = currentFieldDocument();
+  const hasCatalogPage = Boolean(fieldDocument && Object.prototype.hasOwnProperty.call(fieldDocument.pages || {}, String(pageNumber)));
+  const hasNativeFields = annotationFields(annotations, canonicalViewport).length > 0;
+  const hasPrintedText = (textContent.items || []).some(item => String(item.str || '').trim());
+  let canonicalCanvas = canvas;
+  if (metric.extraRotation && !hasCatalogPage && !hasNativeFields && hasPrintedText) {
+    canonicalCanvas = await renderCanonicalFieldCanvas(page, canonicalRotation);
+  }
+  const fields = fieldsForPage(
+    viewport,
+    canvas,
+    pageNumber,
+    annotations,
+    textContent,
+    metric.extraRotation,
+    canonicalViewport,
+    canonicalCanvas
+  );
   if (sequence !== renderSequence || element.dataset.rendering !== 'true' || !element.isConnected) return;
   createAnswerLayer(element, fields, viewport, pageNumber);
-  createVerseLayer(element, page, viewport, pageNumber).catch(() => {});
+  await createPdfLinkLayer(element, annotations, viewport, pageNumber);
+  createAccessiblePageText(element, canvas, textContent, pageNumber);
+  await createVerseLayer(element, viewport, pageNumber, textContent, metric.extraRotation).catch(() => {});
   element.dataset.rendered = 'true';
   element.dataset.rendering = 'false';
   if (Math.abs(pageNumber - pageNum) > 3) {
@@ -821,6 +1050,7 @@ function scrollToPage(number, behavior = 'smooth') {
 async function buildPageStack({ preservePage = false } = {}) {
   if (!pdfDoc) return;
   const area = document.getElementById('pdfArea');
+  area.dataset.allowHorizontalScroll = String(zoomFactor > 1);
   const box = document.getElementById('pdfBox');
   const anchor = preservePage ? document.querySelector(`.pg[data-page-number="${pageNum}"]`) : null;
   const anchorOffset = anchor ? anchor.getBoundingClientRect().top - area.getBoundingClientRect().top : 0;
@@ -831,10 +1061,12 @@ async function buildPageStack({ preservePage = false } = {}) {
   const metrics = await Promise.all(Array.from({ length: pdfDoc.numPages }, async (_, index) => {
     const number = index + 1;
     const page = await pdfDoc.getPage(number);
-    const baseViewport = page.getViewport({ scale: 1 });
+    const extraRotation = Number(pageRotations[String(number)] || 0);
+    const rotation = (Number(page.rotate || 0) + extraRotation) % 360;
+    const baseViewport = page.getViewport({ scale: 1, rotation });
     const scale = fitWidth / baseViewport.width * zoomFactor;
-    const viewport = page.getViewport({ scale });
-    return { number, scale, width: viewport.width, height: viewport.height };
+    const viewport = page.getViewport({ scale, rotation });
+    return { number, scale, rotation, extraRotation, width: viewport.width, height: viewport.height };
   }));
   if (sequence !== renderSequence) return;
   pageMetrics = metrics;
@@ -872,11 +1104,35 @@ function updatePageNavigation() {
   document.getElementById('scrollHint').hidden = total <= 1;
   document.getElementById('zoomOut').disabled = zoomFactor <= MIN_ZOOM;
   document.getElementById('zoomIn').disabled = zoomFactor >= MAX_ZOOM;
+  document.getElementById('zoomValue').textContent = `${Math.round(zoomFactor * 100)}%`;
 }
 
 async function setZoom(value) {
   zoomFactor = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(value * 20) / 20));
+  try { localStorage.setItem(ZOOM_KEY, String(zoomFactor)); } catch {}
   await buildPageStack({ preservePage: true });
+}
+
+async function rotateCurrentPage() {
+  if (!pdfDoc) return;
+  const button = document.getElementById('rotatePage');
+  if (button.dataset.busy) return;
+  const targetPage = pageNum;
+  const key = String(targetPage);
+  button.dataset.busy = '1';
+  button.disabled = true;
+  try {
+    pageRotations[key] = (Number(pageRotations[key] || 0) + 90) % 360;
+    if (!pageRotations[key]) delete pageRotations[key];
+    saveRotations();
+    await buildPageStack({ preservePage: true });
+    pageNum = targetPage;
+    scrollToPage(targetPage, 'auto');
+    document.getElementById('answerHint').textContent = 'P\u00e1gina ' + targetPage + ' girada ' + Number(pageRotations[key] || 0) + ' grados.';
+  } finally {
+    button.disabled = false;
+    delete button.dataset.busy;
+  }
 }
 
 async function loadPdf(url) {
@@ -947,8 +1203,9 @@ async function saveAnsweredPdf() {
     for (let number = 1; number <= pdfDoc.numPages; number += 1) {
       button.textContent = `Página ${number} de ${pdfDoc.numPages}`;
       const page = await pdfDoc.getPage(number);
-      const sourceViewport = page.getViewport({ scale: 1 });
-      const renderViewport = page.getViewport({ scale: 1.7 });
+      const rotation = (Number(page.rotate || 0) + Number(pageRotations[String(number)] || 0)) % 360;
+      const sourceViewport = page.getViewport({ scale: 1, rotation });
+      const renderViewport = page.getViewport({ scale: 1.7, rotation });
       const canvas = document.createElement('canvas');
       canvas.width = Math.ceil(renderViewport.width);
       canvas.height = Math.ceil(renderViewport.height);
@@ -1035,7 +1292,12 @@ async function init() {
   document.getElementById('count').textContent = soloMode ? '' : `${index + 1} / ${lessons.length}`;
   document.getElementById('prev').style.visibility = index <= 0 || soloMode ? 'hidden' : 'visible';
   document.getElementById('next').style.visibility = index >= lessons.length - 1 || soloMode ? 'hidden' : 'visible';
+  const original = document.getElementById('downloadOriginal');
+  original.href = lesson.downloadUrl || lesson.url;
+  original.setAttribute('download', lesson.originalName || `${lesson.title}.pdf`);
+  original.hidden = false;
   loadAnswers();
+  loadRotations();
   await loadPdf(lesson.url);
 }
 
@@ -1053,6 +1315,7 @@ document.getElementById('pgNext').onclick = () => scrollToPage(pageNum + 1);
 document.getElementById('zoomOut').onclick = () => setZoom(zoomFactor - 0.2).catch(() => {});
 document.getElementById('zoomIn').onclick = () => setZoom(zoomFactor + 0.2).catch(() => {});
 document.getElementById('zoomFit').onclick = () => setZoom(1).catch(() => {});
+document.getElementById('rotatePage').onclick = () => rotateCurrentPage().catch(() => {});
 document.getElementById('clearAnswers').onclick = clearOrRestoreAnswers;
 document.getElementById('savePdf').onclick = () => saveAnsweredPdf().catch(() => {
   document.getElementById('answerHint').textContent = 'No se pudo crear el PDF. Intenta otra vez.';

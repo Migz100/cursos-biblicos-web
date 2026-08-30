@@ -14,21 +14,23 @@
 <div class="reader">
   <nav class="readerNav" aria-label="Navegación de la lección">
     <button class="navBtn ghost" id="back">Cursos</button>
-    <div class="title" id="title"></div>
+    <h1 class="title" id="title">Lecci&oacute;n</h1>
     <span class="count" id="count"></span>
     <button class="navBtn" id="prev">Anterior</button>
     <button class="navBtn" id="next">Siguiente</button>
   </nav>
   <section class="answerTools" id="answerTools" aria-label="Herramientas para responder">
-    <div class="zoomTools">
-      <button class="wBtn" id="zoomOut" title="Alejar el documento">Alejar</button>
+    <div class="zoomTools" role="group" aria-label="Tamaño de la lección">
+      <button class="wBtn" id="zoomOut" title="Reducir el tamaño de la lección">Texto −</button>
       <span class="zoomValue" id="zoomValue" aria-live="polite">100%</span>
-      <button class="wBtn" id="zoomIn" title="Acercar el documento">Acercar</button>
-      <button class="wBtn" id="zoomFit" title="Ajustar el documento al ancho">Ajustar</button>
+      <button class="wBtn" id="zoomIn" title="Aumentar el tamaño de la lección">Texto +</button>
+      <button class="wBtn" id="zoomFit" title="Ajustar la lección al ancho">Ajustar</button>
+      <button class="wBtn" id="rotatePage" type="button" title="Girar la p&aacute;gina actual 90 grados">Girar p&aacute;gina</button>
     </div>
     <span class="toolSpacer"></span>
-    <span class="answerHint" id="answerHint">Toca un recuadro para responder con el teclado.</span>
+    <span class="answerHint" id="answerHint" aria-live="polite">Toca un recuadro para responder con el teclado.</span>
     <div class="answerActions">
+      <a class="wBtn downloadTool" id="downloadOriginal" target="_blank" rel="noopener" hidden>PDF original</a>
       <button class="wBtn" id="clearAnswers" title="Borrar las respuestas guardadas">Borrar respuestas</button>
       <button class="wBtn primaryTool" id="savePdf" title="Descargar PDF con respuestas">Guardar PDF</button>
     </div>
