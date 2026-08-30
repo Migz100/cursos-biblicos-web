@@ -35,6 +35,41 @@ test('same-book continuation keeps chapters separate', () => {
   assert.deepEqual(pedro.parts, [{ chapter: 2, verses: [2] }, { chapter: 5, verses: [7] }]);
 });
 
+test('supports chapter ranges, numbered-book variants, and mixed lists', () => {
+  const [chapters] = BibleVerses.findReferences('Lee Génesis 1-3 antes de la próxima lección.');
+  assert.deepEqual(chapters.parts, [
+    { chapter: 1, verses: [] },
+    { chapter: 2, verses: [] },
+    { chapter: 3, verses: [] }
+  ]);
+
+  const [roman] = BibleVerses.findReferences('II Corintios 5:17; 6:1-2');
+  assert.equal(roman.bookId, '47-2-corintios');
+  assert.deepEqual(roman.parts, [
+    { chapter: 5, verses: [17] },
+    { chapter: 6, verses: [1, 2] }
+  ]);
+
+  const [ordinal] = BibleVerses.findReferences('1ª de Juan 5:11-13; 1:9');
+  assert.equal(ordinal.bookId, '62-1-juan');
+  assert.deepEqual(ordinal.parts, [
+    { chapter: 5, verses: [11, 12, 13] },
+    { chapter: 1, verses: [9] }
+  ]);
+
+  const [sameChapterList] = BibleVerses.findReferences('Juan 3:16; 18-20');
+  assert.deepEqual(sameChapterList.parts, [
+    { chapter: 3, verses: [16] },
+    { chapter: 3, verses: [18, 19, 20] }
+  ]);
+});
+
+test('recognizes the numbered San Pedro and Deuteronomio spellings used in the actual slides', () => {
+  const references = BibleVerses.findReferences('2 S. Pedro 3:7,10; 1 S. Pedro 2:24; DeuteronÃ³mio 16:17');
+  assert.deepEqual(references.map(item => item.bookId), ['61-2-pedro', '60-1-pedro', '05-deuteronomio']);
+  assert.equal(BibleVerses.findReferences('2.300 tardes y maÃ±anas').length, 0);
+});
+
 test('chapter-only references resolve to whole chapter', () => {
   const [ref] = BibleVerses.findReferences('estudia Daniel 2 esta semana');
   assert.equal(ref.bookId, '27-daniel');
@@ -44,6 +79,8 @@ test('chapter-only references resolve to whole chapter', () => {
 
 test('no false positives on plain text', () => {
   assert.equal(BibleVerses.findReferences('Bienvenido al curso de la semana 3').length, 0);
+  assert.equal(BibleVerses.findReferences('ARCHIVO 14 FE 3 USO 20').length, 0);
+  assert.equal(BibleVerses.findReferences('https://ejemplo.test/Juan3:16').length, 0);
   assert.equal(BibleVerses.findReferences('').length, 0);
 });
 
@@ -86,10 +123,11 @@ test('referenceIsValid rejects impossible chapters and verses', () => {
   assert.equal(BibleVerses.referenceIsValid(badVerse, apoc), false);
 });
 
-test('every bundled book file parses and matches index', () => {
+test('every bundled book file parses and matches the parser index', () => {
   const dir = path.join(__dirname, '..', 'assets', 'bible', 'rvr1960');
   const index = JSON.parse(fs.readFileSync(path.join(dir, 'index.json'), 'utf8'));
   assert.equal(index.books.length, 66);
+  assert.deepEqual(BibleVerses.BOOKS.map(book => book.id), index.books.map(book => book.id));
   for (const book of index.books) {
     const data = JSON.parse(fs.readFileSync(path.join(dir, `${book.id}.json`), 'utf8'));
     const chapters = Object.keys(data.chapters).map(Number);
@@ -107,4 +145,35 @@ test('bundled RVR1960 spot verses are authentic', () => {
   assert.match(read('55-2-timoteo', '3', '16'), /^Toda la Escritura es inspirada por Dios/);
   assert.match(read('01-genesis', '1', '1'), /^En el principio creó Dios los cielos y la tierra/);
   assert.match(read('66-apocalipsis', '14', '7'), /juicio ha llegado/);
+});
+
+test('deterministic corpus validates every current OCR reference against bundled RVR1960', t => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'assets', 'verse-fields.json'), 'utf8'));
+  let references = 0;
+  let pageCount = 0;
+  const documents = Object.entries(catalog.documents || {}).sort(([a], [b]) => a.localeCompare(b));
+  for (const [documentId, document] of documents) {
+    const pageEntries = Object.entries(document.pages || {}).sort(([a], [b]) => Number(a) - Number(b));
+    for (const [pageNumber, entries] of pageEntries) {
+      pageCount += 1;
+      for (const entry of entries) {
+        references += 1;
+        const expected = { bookId: entry.bookId, bookName: entry.bookName, parts: entry.parts };
+        const book = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'assets', 'bible', 'rvr1960', `${expected.bookId}.json`), 'utf8'));
+        assert.equal(BibleVerses.referenceIsValid(expected, book), true, `${documentId} página ${pageNumber}: ${BibleVerses.formatReference(expected)}`);
+        for (const key of ['x', 'y', 'w', 'h']) {
+          assert.equal(Number.isFinite(entry[key]) && entry[key] >= 0 && entry[key] <= 1, true, `${documentId} página ${pageNumber}: ${key}`);
+        }
+        const canonical = BibleVerses.formatReference(expected);
+        const [actual] = BibleVerses.findReferences(canonical);
+        assert.ok(actual, `${documentId} página ${pageNumber}: ${canonical}`);
+        assert.equal(actual.bookId, expected.bookId, `${documentId} página ${pageNumber}: ${canonical}`);
+        assert.deepEqual(actual.parts, expected.parts, `${documentId} página ${pageNumber}: ${canonical}`);
+      }
+    }
+  }
+  assert.ok(documents.length > 0);
+  assert.ok(pageCount > 0);
+  assert.ok(references > 0);
+  t.diagnostic(`${documents.length} documentos, ${pageCount} páginas con referencias, ${references} referencias validadas`);
 });
