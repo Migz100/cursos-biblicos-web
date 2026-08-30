@@ -20,10 +20,6 @@ function trustedBlobUrl(value) {
   return parsed.href;
 }
 
-function officeViewerUrl(assetUrl) {
-  return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(assetUrl)}`;
-}
-
 function catalogAssetUrl(value, pathname) {
   const trusted = trustedBlobUrl(value);
   let actualPath;
@@ -58,7 +54,7 @@ function resolvePresentationLesson(manifest, courseId, lessonId, expectedNamespa
   ) {
     throw new CmsError(400, 'UNTRUSTED_PRESENTATION', 'La presentación no pertenece a este catálogo.');
   }
-  const assetUrl = catalogAssetUrl(lesson.url, lesson.pathname);
+  catalogAssetUrl(lesson.url, lesson.pathname);
   const downloadUrl = catalogAssetUrl(lesson.downloadUrl || lesson.url, lesson.pathname);
   return {
     course: { id: course.id, name: course.name },
@@ -69,14 +65,13 @@ function resolvePresentationLesson(manifest, courseId, lessonId, expectedNamespa
       originalName: lesson.originalName,
       downloadUrl
     },
-    viewerUrl: officeViewerUrl(assetUrl)
+    viewerAvailable: false
   };
 }
 
 module.exports = {
   PRESENTATION_TYPES,
   catalogAssetUrl,
-  officeViewerUrl,
   resolvePresentationLesson,
   trustedBlobUrl
 };

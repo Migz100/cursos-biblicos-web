@@ -5,13 +5,12 @@ const statusElement = document.getElementById('status');
 const frame = document.getElementById('presentationFrame');
 const fallback = document.getElementById('fallback');
 let presentation = null;
-let loadTimer = null;
 
-function showError(message) {
-  clearTimeout(loadTimer);
+function showError(message, detail = 'Puedes descargar el archivo original para verlo completo.') {
   frame.hidden = true;
   statusElement.hidden = true;
   fallback.querySelector('strong').textContent = message;
+  fallback.querySelector('span').textContent = detail;
   fallback.hidden = false;
 }
 
@@ -59,31 +58,13 @@ async function load() {
   document.title = `${presentation.lesson.title} · ${presentation.course.name}`;
   document.getElementById('title').textContent = presentation.lesson.title;
   document.getElementById('back').href = `curso.html?c=${encodeURIComponent(presentation.course.id)}`;
-  const openViewer = document.getElementById('openViewer');
-  openViewer.href = presentation.viewerUrl;
-  openViewer.hidden = false;
   document.getElementById('download').disabled = false;
-  frame.onload = () => {
-    clearTimeout(loadTimer);
-    statusElement.hidden = true;
-    fallback.hidden = true;
-    frame.hidden = false;
-  };
-  frame.src = presentation.viewerUrl;
-  loadTimer = setTimeout(() => {
-    fallback.hidden = false;
-  }, 20000);
+  showError(
+    'Vista previa desactivada para proteger el contenido.',
+    'El visor en línea puede ocultar texto de estas presentaciones. Descarga el archivo original para verlo completo.'
+  );
 }
 
 document.getElementById('download').onclick = downloadPresentation;
-document.getElementById('fullScreen').onclick = async () => {
-  if (!presentation) return;
-  const stage = document.getElementById('stage');
-  if (stage.requestFullscreen) {
-    await stage.requestFullscreen().catch(() => window.open(presentation.viewerUrl, '_blank', 'noopener'));
-  } else {
-    window.open(presentation.viewerUrl, '_blank', 'noopener');
-  }
-};
 
 load().catch(() => showError('No se pudo cargar la presentación.'));
