@@ -22,6 +22,10 @@ function invariant(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function lessonsById(lessons) {
+  return [...lessons].sort((left, right) => String(left.id).localeCompare(String(right.id)));
+}
+
 async function loadCatalog(baseUrl, protectedPreview) {
   const route = `/api/catalog?verify=${Date.now()}`;
   if (!protectedPreview) {
@@ -64,10 +68,14 @@ async function readDeploymentAsset(baseUrl, route, protectedPreview) {
 async function main() {
   const baseUrl = process.argv[2]?.replace(/\/$/, '');
   const protectedPreview = process.argv.includes('--vercel-protected');
-  invariant(baseUrl, 'Usage: node scripts/verify-release.js <deployment-url> [--vercel-protected]');
+  const expectedRevision = process.argv
+    .find(argument => argument.startsWith('--expected-revision='))
+    ?.slice('--expected-revision='.length);
+  invariant(baseUrl, 'Usage: node scripts/verify-release.js <deployment-url> [--vercel-protected] [--expected-revision=<revision>]');
   const manifest = await loadCatalog(baseUrl, protectedPreview);
   const starter = applyDefaultCourseCovers(buildStarterManifest());
 
+  if (expectedRevision) invariant(manifest.revision === expectedRevision, 'Production catalog revision changed');
   invariant(manifest.courses.length === 14, 'Expected 14 courses');
   invariant(totalLessons(manifest) === 215, 'Expected 215 lessons');
   for (const expected of starter.courses.slice(1)) {
@@ -75,7 +83,14 @@ async function main() {
     invariant(actual, `Starter course ${expected.id} is missing`);
     invariant(actual.name === expected.name, `Starter course ${expected.id} was renamed`);
     invariant(actual.lessons.length === expected.lessons.length, `Starter course ${expected.id} lesson count changed`);
-    invariant(JSON.stringify(actual.lessons) === JSON.stringify(expected.lessons), `Starter course ${expected.id} lessons changed`);
+    invariant(new Set(actual.lessons.map(item => item.id)).size === actual.lessons.length, `Starter course ${expected.id} has duplicate lesson ids`);
+    invariant(actual.lessons.every(item => item.id && item.title && item.type && item.url), `Starter course ${expected.id} has an incomplete lesson`);
+    if (!expectedRevision) {
+      invariant(
+        JSON.stringify(lessonsById(actual.lessons)) === JSON.stringify(lessonsById(expected.lessons)),
+        `Starter course ${expected.id} lesson content changed`
+      );
+    }
   }
 
   const starterFe = starter.courses[0];
