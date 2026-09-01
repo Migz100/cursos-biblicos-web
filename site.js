@@ -102,13 +102,10 @@ async function load() {
   const response = await fetch(DATA_URL);
   if (!response.ok) throw new Error('No se pudo cargar el catálogo.');
   DATA = await response.json();
-  document.getElementById('h1').textContent = DATA.appName;
-  document.getElementById('sub').textContent = DATA.appSubtitle;
   const download = document.getElementById('dlBtn');
   if (DATA.zip) {
     download.href = DATA.zip;
     download.hidden = false;
-    document.getElementById('archiveNote').hidden = false;
     download.addEventListener('click', event => {
       event.preventDefault();
       shareDownload(DATA.zip, 'Cursos Bíblicos - catálogo original.zip', download);

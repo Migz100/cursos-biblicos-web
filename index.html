@@ -13,15 +13,17 @@
 <body>
 <nav><div class="inner"><span class="brand" id="brand">Cursos Bíblicos</span><span class="spacer"></span><a class="manageLink" href="admin/">Administrar</a></div></nav>
 <main>
-  <div class="hero">
-    <h1 id="h1"></h1>
-    <p id="sub"></p>
-    <a class="dlBtn" id="dlBtn" download hidden>Descargar catálogo original (ZIP)</a>
-    <p class="archiveNote" id="archiveNote" hidden>Este ZIP conserva el catálogo inicial. Los cambios nuevos se descargan por lección.</p>
-  </div>
-  <div class="searchWrap">
-    <svg class="glass" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="#1D1D1F" stroke-width="1.6"/><line x1="10.8" y1="10.8" x2="15" y2="15" stroke="#1D1D1F" stroke-width="1.6" stroke-linecap="round"/></svg>
-    <input type="search" id="search" placeholder="Buscar curso" autocomplete="off">
+  <section class="homeHero" aria-labelledby="homeTitle">
+    <img class="homeHeroImage" src="assets/course-covers/fe-de-jesus.webp" alt="" width="1440" height="1080" fetchpriority="high">
+    <h1 id="homeTitle">Estudia la Biblia<br>a tu ritmo</h1>
+  </section>
+  <div class="homeControls">
+    <label class="srOnly" for="search">Buscar curso</label>
+    <div class="searchWrap">
+      <svg class="glass" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="5" stroke="#1D1D1F" stroke-width="1.6"/><line x1="10.8" y1="10.8" x2="15" y2="15" stroke="#1D1D1F" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <input type="search" id="search" placeholder="Buscar curso" autocomplete="off">
+    </div>
+    <a class="catalogDownload" id="dlBtn" download hidden>Descargar catálogo original (ZIP)</a>
   </div>
   <div id="sections"></div>
   <div class="empty" id="empty" style="display:none">Ningún curso coincide con "0".</div>
