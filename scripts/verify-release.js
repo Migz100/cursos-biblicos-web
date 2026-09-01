@@ -3,6 +3,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { buildStarterManifest, totalLessons } = require('../api/_lib/cms/core');
+const { DEFAULT_COURSE_COVERS, applyDefaultCourseCovers } = require('../api/_lib/cms/course-covers');
 const { LESSON_TITLES: FE_TITLES } = require('./fe-de-jesus-source');
 
 const COURSE_NAME = 'La Fe de Jesús 2';
@@ -65,7 +66,7 @@ async function main() {
   const protectedPreview = process.argv.includes('--vercel-protected');
   invariant(baseUrl, 'Usage: node scripts/verify-release.js <deployment-url> [--vercel-protected]');
   const manifest = await loadCatalog(baseUrl, protectedPreview);
-  const starter = buildStarterManifest();
+  const starter = applyDefaultCourseCovers(buildStarterManifest());
 
   invariant(manifest.courses.length === 14, 'Expected 14 courses');
   invariant(totalLessons(manifest) === 215, 'Expected 215 lessons');
@@ -91,6 +92,17 @@ async function main() {
     item.legacyNumber === String(index + 1).padStart(2, '0') &&
     item.type === 'pdf' && item.managed
   )), 'Fe de Jesús lesson identity or format is wrong');
+
+  await Promise.all(Object.entries(DEFAULT_COURSE_COVERS).map(async ([courseId, coverUrl]) => {
+    const starterCourse = manifest.courses.find(item => String(item.id) === courseId);
+    invariant(starterCourse, `Starter course ${courseId} is missing`);
+    invariant(starterCourse.coverUrl === coverUrl, `Starter course ${courseId} has the wrong cover`);
+    const cover = await readDeploymentAsset(baseUrl, coverUrl, protectedPreview);
+    invariant(
+      cover.subarray(0, 4).toString('ascii') === 'RIFF' && cover.subarray(8, 12).toString('ascii') === 'WEBP',
+      `Starter course ${courseId} cover is unavailable`
+    );
+  }));
 
   const course = manifest.courses.find(item => item.name === COURSE_NAME);
   invariant(course?.section === 'lafe', 'La Fe de Jesús 2 is not in the PowerPoint section');
@@ -119,7 +131,7 @@ async function main() {
     invariant(bytes.subarray(0, 5).toString('ascii') === '%PDF-', `Fe de Jesús lesson ${index + 1} is not a PDF`);
   }));
 
-  process.stdout.write(JSON.stringify({ revision: manifest.revision, courses: 14, lessons: 215, feLessons: 20, laFe2Lessons: 30, assetsVerified: 50 }) + '\n');
+  process.stdout.write(JSON.stringify({ revision: manifest.revision, courses: 14, lessons: 215, feLessons: 20, laFe2Lessons: 30, assetsVerified: 63 }) + '\n');
 }
 
 main().catch(error => {
