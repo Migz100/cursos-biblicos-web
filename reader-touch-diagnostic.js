@@ -7,8 +7,11 @@ export default function startTouchDiagnostic() {
   const listeners = [];
   const timers = new Set();
   const transitions = [];
+  const eventLabels = { pointerdown: 'pd', pointerup: 'pu', touchstart: 'ts', touchend: 'te', mousedown: 'md', mouseup: 'mu', click: 'c', focusin: '+', focusout: '-', 'nodo-retirado': 'X' };
   const received = { keydown: 0, beforeinput: 0, input: 0 };
   let nextIdentity = 0;
+  let nextSequence = 0;
+  let lastTransitionTime = null;
   let touched = null;
   let stopped = false;
   const viewport = window.visualViewport;
@@ -26,12 +29,15 @@ export default function startTouchDiagnostic() {
     if (!element) return 'ninguno';
     return `n${element.node} ${element.id} ${element.connected ? 'con' : 'fuera'}${element.focused ? ' FOCO' : ''}`;
   }
-  function record(type, target = null) {
+  function record(type, target = null, relatedTarget = null) {
     if (stopped) return;
     const area = document.getElementById('pdfArea');
     const rect = touched?.getBoundingClientRect();
     const entry = {
-      time: Math.round(performance.now()), type, target: describe(target), active: describe(document.activeElement), touched: describe(touched),
+      sequence: ++nextSequence, time: Math.round(performance.now()), type, target: describe(target), active: describe(document.activeElement), touched: describe(touched),
+      relatedTarget: describe(relatedTarget),
+      labelControl: describe(target instanceof Element ? target.closest('label')?.control : null),
+      touchedLabel: describe(touched?.labels?.[0]),
       documentFocused: document.hasFocus(),
       areaWidth: area?.clientWidth ?? null, areaScrollWidth: area?.scrollWidth ?? null,
       fontSize: touched?.isConnected ? getComputedStyle(touched).fontSize : null,
@@ -41,9 +47,12 @@ export default function startTouchDiagnostic() {
     };
     trace.push(entry);
     if (trace.length > 120) trace.splice(0, trace.length - 120);
-    if (type === 'focusin' || type === 'focusout' || type === 'nodo-retirado') {
-      transitions.push(`${type === 'focusin' ? '+' : type === 'focusout' ? '-' : 'X'}n${entry.target?.node ?? '?'}`);
-      if (transitions.length > 6) transitions.shift();
+    if (Object.hasOwn(eventLabels, type)) {
+      const gap = lastTransitionTime === null ? 0 : entry.time - lastTransitionTime;
+      const destination = type === 'focusout' ? `>${entry.relatedTarget?.node ?? '?'}` : '';
+      transitions.push(`${eventLabels[type]}${entry.target?.node ?? '?'}${destination}:${gap}`);
+      lastTransitionTime = entry.time;
+      if (transitions.length > 5) transitions.shift();
     }
     const scale = Math.max(0.1, viewport?.scale || 1);
     const left = viewport?.offsetLeft || 0;
@@ -55,16 +64,16 @@ export default function startTouchDiagnostic() {
       `TOQUE ${type} | tecla ${received.keydown} texto ${received.input}`,
       `Activo: ${label(entry.active)}`,
       `Tocado: ${label(entry.touched)}`,
-      `Foco (+entra -sale Xretirado): ${transitions.join(' ') || 'sin cambios'}`,
+      `Orden ms: ${transitions.join(' ') || 'sin cambios'}`,
       `Área: ${entry.areaWidth ?? '?'} / ${entry.areaScrollWidth ?? '?'}px; letra ${entry.fontSize || '?'}`,
-      `Vista: ${Math.round(width)}px x${scale.toFixed(2)} (${Math.round(left)},${Math.round(top)}) doc ${entry.documentFocused ? 'sí' : 'no'}`
+      `Vista: ${Math.round(width)}×${Math.round(viewport?.height || window.innerHeight)}px x${scale.toFixed(2)} (${Math.round(left)},${Math.round(top)}) doc ${entry.documentFocused ? 'sí' : 'no'}`
     ].join('\n');
   }
   function listen(target, type, listener, options) {
     target.addEventListener(type, listener, options);
     listeners.push(() => target.removeEventListener(type, listener, options));
   }
-  for (const type of ['pointerdown', 'touchstart', 'click', 'focusin', 'focusout', 'beforeinput', 'input', 'keydown']) {
+  for (const type of ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'mousedown', 'mouseup', 'click', 'focusin', 'focusout', 'beforeinput', 'input', 'keydown']) {
     listen(document, type, event => {
       if (type === 'pointerdown' || type === 'touchstart') {
         const target = event.target;
@@ -82,7 +91,7 @@ export default function startTouchDiagnostic() {
       }
       if (event.target === touched && Object.hasOwn(received, type)) received[type] += 1;
       // Event type and node identity only. Never read keys, input data or values.
-      record(type, event.target);
+      record(type, event.target, type === 'focusout' ? event.relatedTarget : null);
     }, { capture: true, passive: true });
   }
   listen(window, 'resize', () => record('resize'), { passive: true });

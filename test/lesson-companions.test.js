@@ -39,3 +39,26 @@ test('the companion has exactly one stable writable blank on slide three', () =>
   assert.equal(document.pages['3'][0].color, '#FFFFFF');
   assert.equal(document.pages['3'][0].verified, true);
 });
+
+
+test('all thirty presentation lessons have complete reading copies and preserve original downloads', () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(root, 'assets/answer-fields.json')));
+  const documents = Object.entries(catalog.documents).filter(([key]) => key.startsWith(`${course}|`));
+  assert.equal(documents.length, 30, 'Every offered presentation must be readable in the app');
+  const paths = new Set();
+  let totalPages = 0;
+  for (const [key, document] of documents) {
+    const source = { id: key.split('|')[1], url: document.url };
+    const original = { ...source };
+    const companion = context.window.LessonCompanions.get(course, source);
+    assert.ok(companion, `Missing reading copy: ${source.id}`);
+    assert.deepEqual(source, original, 'The original presentation remains downloadable');
+    assert.equal(fs.readFileSync(path.join(root, companion.pdfUrl)).subarray(0, 5).toString(), '%PDF-');
+    assert.equal(context.window.LessonCompanions.get(course, { ...source, url: source.url + '.replaced' }), null);
+    paths.add(companion.pdfUrl);
+    totalPages += Object.keys(document.pages).length;
+    if (source.id !== lesson.id) assert.equal(Object.values(document.pages).flat().length, 0, 'Already printed answers must stay readable');
+  }
+  assert.equal(paths.size, 30, 'Each lesson keeps its own source content');
+  assert.equal(totalPages, 570, 'Reading copies include the six source-hidden slides');
+});
