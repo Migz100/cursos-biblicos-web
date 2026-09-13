@@ -41,8 +41,8 @@ test('answer fields stay tied to their PDF page in the continuous reader', () =>
 
 test('answer controls reject stale catalogs and preserve native AcroForm checkboxes', () => {
   assert.match(reader, /catalogPageCount !== pdfDoc\.numPages/);
-  assert.match(reader, /kind: annotation\.fieldType === 'Btn' \? 'check' : 'widget',[\s\S]*?native: true/);
-  assert.match(reader, /fields\.filter\(field => field\.native \|\| !overlapsPrintedText\(field, rects\)\)/);
+  assert.match(reader, /kind: annotation\.radioButton \? 'radio' : annotation\.fieldType === 'Btn' \? 'check' : 'widget',[\s\S]*?native: true/);
+  assert.match(reader, /fields\.filter\(field => field\.native \|\| field\.verified \|\| !overlapsPrintedText\(field, rects\)\)/);
   assert.match(reader, /hasPrintedText \? detectedCanvasFields\(canonicalCanvas\) : \[\]/);
   assert.match(reader, /renderCanonicalFieldCanvas\(page, canonicalRotation\)/);
 });
@@ -56,17 +56,17 @@ test('every rendered page exposes text and safe PDF annotations to assistive tec
   assert.match(html, /id="downloadOriginal"/);
 });
 
-test('reader controls are large, keyboard visible, and remember the chosen zoom', () => {
+test('reader controls are large, keyboard visible, and preserve native browser zoom', () => {
   assert.match(styles, /\.navBtn \{[\s\S]*?min-height: 44px/);
   assert.match(styles, /\.wBtn \{[\s\S]*?min-height: 44px/);
   assert.match(styles, /:focus-visible[\s\S]*?outline: 3px solid var\(--focus\)/);
-  assert.match(styles, /\.answerField \{[\s\S]*?border: 2px solid var\(--focus\)/);
-  assert.match(styles, /\.answerField:focus \{ outline: 3px solid var\(--focus\)/);
-  assert.match(styles, /\.answerCheck::before \{[\s\S]*?border: 2px solid var\(--focus\)/);
-  assert.match(reader, /const ZOOM_KEY = 'cursosBiblicosReaderZoom_v2'/);
-  assert.match(reader, /localStorage\.setItem\(ZOOM_KEY, String\(zoomFactor\)\)/);
-  assert.match(reader, /zoomValue'\)\.textContent = `\$\{Math\.round\(zoomFactor \* 100\)\}%`/);
-  assert.match(reader, /area\.dataset\.allowHorizontalScroll = String\(zoomFactor > 1\)/);
+  assert.match(styles, /\.answerField \{[^}]*?border: 0;/);
+  assert.match(styles, /\.answerField:focus \{ outline: 2px solid var\(--focus\); outline-offset: -2px/);
+  assert.match(styles, /\.answerCheck::before \{[\s\S]*?box-sizing: border-box;[\s\S]*?border: 1px solid var\(--focus\)/);
+  assert.doesNotMatch(html, /id="zoom(?:Out|In|Fit|Value)"/);
+  assert.doesNotMatch(html, /user-scalable=no|maximum-scale=/);
+  assert.doesNotMatch(reader, /addEventListener\('wheel'/);
+  assert.match(reader, /area\.dataset\.allowHorizontalScroll = 'false'/);
   assert.match(styles, /\.pdfArea\[data-allow-horizontal-scroll="false"\] \{ overflow-x: hidden; \}/);
   assert.match(reader, /function minimumTargetGeometry\(geometry, viewport, minimumPixels = 44\)/);
   assert.match(html, /<h1 class="title" id="title">/);
@@ -77,9 +77,9 @@ test('catalog Bible links are validated against bundled RVR1960 before rendering
   assert.match(reader, /pageElement\.dataset\.invalidVerseCount = String\(rejected\)/);
 });
 
-test('the current PDF page can be rotated without changing source content or other pages', () => {
-  assert.match(html, /id="rotatePage"/);
-  assert.match(reader, /pageRotations\[key\] = \(Number\(pageRotations\[key\] \|\| 0\) \+ 90\) % 360/);
+test('saved page rotations retain source content and answer alignment without a rotation button', () => {
+  assert.doesNotMatch(html, /id="rotatePage"/);
+  assert.match(reader, /localStorage\.getItem\(rotationKey\(\)\)/);
   assert.match(reader, /page\.getViewport\(\{ scale: metric\.scale, rotation: metric\.rotation \}\)/);
   assert.match(reader, /rotateGeometry\(field, extraRotation\)/);
   assert.match(reader, /createVerseLayer\(element, viewport, pageNumber, textContent, metric\.extraRotation\)/);
@@ -103,8 +103,8 @@ test('the current PDF page can be rotated without changing source content or oth
 });
 
 test('Bible dialog traps focus, closes with Escape, and restores the triggering reference', () => {
-  assert.match(reader, /verseReturnFocus = document\.activeElement/);
+  assert.match(reader, /verseReturnFocus = trigger \|\| document\.activeElement/);
   assert.match(reader, /if \(event\.key === 'Escape'\)/);
   assert.match(reader, /if \(event\.key !== 'Tab'\) return/);
-  assert.match(reader, /if \(target\?\.isConnected\) target\.focus\(\)/);
+  assert.match(reader, /if \(target\?\.isConnected\) target\.focus\(\{ preventScroll: true \}\)/);
 });

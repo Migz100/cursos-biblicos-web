@@ -35,14 +35,16 @@ function lessonRow(course, lesson, index) {
   const row = document.createElement('div');
   row.className = 'row';
   const isPresentation = ['ppt', 'pptx', 'ppsx'].includes(lesson.type);
+  const companion = window.LessonCompanions?.get(course.id, lesson);
+  const readable = lesson.type === 'pdf' || Boolean(companion);
   const open = document.createElement('a');
   open.className = 'rowMain';
-  open.href = lesson.type === 'pdf'
+  open.href = readable
     ? `leer.html?c=${encodeURIComponent(course.id)}&l=${encodeURIComponent(lesson.legacyNumber || lesson.id)}`
     : isPresentation
       ? `presentacion.html?c=${encodeURIComponent(course.id)}&l=${encodeURIComponent(lesson.id)}`
       : lesson.downloadUrl || lesson.url;
-  if (lesson.type !== 'pdf' && !isPresentation) open.target = '_blank';
+  if (!readable && !isPresentation) open.target = '_blank';
 
   const number = document.createElement('div');
   number.className = 'num';
@@ -52,7 +54,7 @@ function lessonRow(course, lesson, index) {
   label.textContent = lesson.title;
   const kind = document.createElement('span');
   kind.className = 'fileKind';
-  kind.textContent = lesson.sourceType === 'pages'
+  kind.textContent = companion ? 'PDF + PPTX' : lesson.sourceType === 'pages'
     ? 'PDF + PAGES'
     : lesson.type === 'pages'
       ? 'PAGES'
@@ -74,7 +76,7 @@ function lessonRow(course, lesson, index) {
   };
   open.append(number, label, kind);
   row.append(open, button);
-  if (lesson.type === 'pdf' || isPresentation) {
+  if (readable || isPresentation) {
     const share = document.createElement('button');
     share.className = 'dlRow shareRow';
     share.type = 'button';
@@ -84,7 +86,7 @@ function lessonRow(course, lesson, index) {
     share.onclick = async event => {
       event.preventDefault();
       event.stopPropagation();
-      const page = lesson.type === 'pdf' ? 'leer.html' : 'presentacion.html';
+      const page = readable ? 'leer.html' : 'presentacion.html';
       const url = `${location.origin}/${page}?c=${encodeURIComponent(course.id)}&l=${encodeURIComponent(lesson.legacyNumber || lesson.id)}&solo=1`;
       const payload = { title: lesson.title, text: `${lesson.title} · ${course.name}`, url };
       if (navigator.share) {

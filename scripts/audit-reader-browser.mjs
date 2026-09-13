@@ -6,6 +6,7 @@ import fsSync from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
+import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -175,10 +176,18 @@ const SCAN_SCRIPT = String.raw`
     }
     const canvas = page.querySelector('canvas.pdfCanvas');
     const controls = [...page.querySelectorAll('button,a[href],textarea,input,select')].filter(visible);
-    const targetIssues = controls.map(element => {
+    const targetIssues = controls.filter(element => !element.matches('.answerField,.answerCheck')).map(element => {
       const rect = element.getBoundingClientRect();
       return { label: element.getAttribute('aria-label') || element.textContent.trim(), width: rect.width, height: rect.height };
     }).filter(item => item.width < 43.5 || item.height < 43.5);
+    const pageRect = page.getBoundingClientRect();
+    const answerPlacementIssues = controls.filter(element => element.matches('.answerField,.answerCheck')).filter(element => {
+      const rect = element.getBoundingClientRect();
+      return Math.abs(rect.width - parseFloat(element.style.width) * pageRect.width / 100) > 1 ||
+        Math.abs(rect.height - parseFloat(element.style.height) * pageRect.height / 100) > 1 ||
+        Math.abs(rect.left - pageRect.left - parseFloat(element.style.left) * pageRect.width / 100) > 1 ||
+        Math.abs(rect.top - pageRect.top - parseFloat(element.style.top) * pageRect.height / 100) > 1;
+    }).map(element => element.dataset.answerId);
     const descriptionId = canvas?.getAttribute('aria-describedby') || '';
     evidence.push({
       page: Number(page.dataset.pageNumber),
@@ -189,7 +198,8 @@ const SCAN_SCRIPT = String.raw`
       invalidVerseCount: Number(page.dataset.invalidVerseCount || 0),
       verseLinks: page.querySelectorAll('.verseRef').length,
       answerControls: page.querySelectorAll('.answerField,.answerCheck').length,
-      targetIssues
+      targetIssues,
+      answerPlacementIssues
     });
   }
   document.querySelector('.pg')?.scrollIntoView({ block: 'start', inline: 'nearest' });
@@ -218,6 +228,7 @@ const SCAN_SCRIPT = String.raw`
     verseLinks: evidence.reduce((sum, item) => sum + item.verseLinks, 0),
     answerControls: evidence.reduce((sum, item) => sum + item.answerControls, 0),
     pageTargetIssues: evidence.flatMap(item => item.targetIssues.map(issue => ({ page: item.page, ...issue }))).slice(0, 30),
+    answerPlacementIssues: evidence.flatMap(item => item.answerPlacementIssues.map(id => ({ page: item.page, id }))),
     topTargetIssues,
     globalOverflowPx: Math.max(0, document.documentElement.scrollWidth - innerWidth),
     readerOverflowPx: Math.max(0, area.scrollWidth - area.offsetWidth),
@@ -238,6 +249,7 @@ function viewPassed(metrics, violations, runtimeErrors) {
     metrics.missingDescriptions.length === 0 &&
     metrics.invalidVerseLinksRejected === 0 &&
     metrics.pageTargetIssues.length === 0 &&
+    metrics.answerPlacementIssues.length === 0 &&
     metrics.topTargetIssues.length === 0 &&
     metrics.globalOverflowPx <= 2 &&
     metrics.readerOverflowPx <= 2 &&
@@ -329,11 +341,19 @@ async function representativeInteractions(client) {
   })`));
 
   const testValue = 'Respuesta local de accesibilidad';
-  await evaluate(client, `(() => {
+  await client.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
+  const point = await evaluate(client, `(() => {
     const field = document.querySelector('.answerField');
-    field.value = ${JSON.stringify(testValue)};
-    field.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: ${JSON.stringify(testValue)} }));
+    field.scrollIntoView({ block: 'center', inline: 'center' });
+    const rect = field.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.bottom + 3 };
   })()`);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await waitForExpression(client, `document.activeElement === document.querySelector('.answerField')`);
+  await pressKey(client, 'a', 'KeyA', 65, process.platform === 'darwin' ? 4 : 2);
+  await client.send('Input.insertText', { text: testValue });
+  await waitForExpression(client, `document.querySelector('.answerField')?.value === ${JSON.stringify(testValue)}`);
   await client.send('Page.reload', { ignoreCache: true });
   await waitForExpression(client, `document.querySelector('.answerField')?.value === ${JSON.stringify(testValue)}`);
   const persistedAfterReload = await evaluate(client, `document.querySelector('.answerField')?.value === ${JSON.stringify(testValue)}`);
@@ -352,7 +372,7 @@ async function representativeInteractions(client) {
       uniqueStops: new Set(tabOrder.map(item => `${item.id}|${item.className}`)).size
     },
     verseDialog: { opened, tabInside, shiftTabInside, closed },
-    answers: { persistedAfterReload, cleared, restored }
+    answers: { activatedByTouch: true, persistedAfterReload, cleared, restored }
   };
 }
 
@@ -361,7 +381,11 @@ async function main() {
   if (!catalogResponse.ok) throw new Error(`El servidor local no respondió (${catalogResponse.status}). Ejecuta npm run audit:serve.`);
   const catalog = await catalogResponse.json();
   const allLessons = catalog.courses.flatMap(course => course.lessons.map(lesson => ({ course, lesson })));
-  const allPdfs = allLessons.filter(({ lesson }) => lesson.type === 'pdf');
+  const companionContext = { window: {} };
+  vm.runInNewContext(await fs.readFile(path.join(ROOT, 'lesson-companions.js'), 'utf8'), companionContext);
+  const allPdfs = allLessons.filter(({ course, lesson }) =>
+    lesson.type === 'pdf' || companionContext.window.LessonCompanions.get(course.id, lesson)
+  );
   const pdfs = allPdfs.slice(0, SMOKE ? 1 : LIMIT);
   const views = [
     { name: '390x844', screenWidth: 390, screenHeight: 844, layoutWidth: 390, layoutHeight: 844, deviceScaleFactor: 1, browserZoomPercent: 100 },
@@ -397,7 +421,7 @@ async function main() {
       pdfLessons: allPdfs.length,
       auditedPdfLessons: pdfs.length
     },
-    browser: { name: 'Chrome for Testing', realBrowser: true, axe: true },
+    browser: { name: 'Chrome for Testing', realBrowser: true, physicalPhoneKeyboardVerified: false, axe: true },
     views,
     interactions: null,
     lessons: [],

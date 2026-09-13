@@ -171,7 +171,7 @@ input[type=search]:focus { border-color: var(--focus); background: #fff; }
   display: flex; align-items: center; gap: 8px; padding: 8px 16px; overflow-x: auto;
   background: #F2F2F7; border-bottom: 0.5px solid rgba(0,0,0,0.08);
 }
-.zoomTools, .answerActions { display: flex; align-items: center; gap: 8px; flex: none; }
+.answerActions { display: flex; align-items: center; gap: 8px; flex: none; }
 .wBtn {
   min-height: 44px; border: none; border-radius: 980px; padding: 8px 14px; flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
@@ -183,7 +183,6 @@ input[type=search]:focus { border-color: var(--focus); background: #fff; }
 .wBtn:disabled { opacity: 0.4; cursor: default; }
 .wBtn.primaryTool { background: var(--accent); color: #fff; }
 .toolSpacer { flex: 1; }
-.zoomValue { min-width: 54px; color: var(--text2); font-size: 15px; font-weight: 700; text-align: center; }
 .answerHint { min-width: 240px; color: var(--text2); font-size: 14px; line-height: 1.35; text-align: right; }
 .pdfArea {
   width: 100%; max-width: none; flex: 1; overflow: auto; margin: 0; padding: 12px 12px 40px; background: #E5E5EA;
@@ -198,43 +197,52 @@ input[type=search]:focus { border-color: var(--focus); background: #fff; }
 }
 .pg .pdfCanvas { display: block; border-radius: 4px; }
 .pageLoading { color: var(--text2); font-size: 14px; font-weight: 600; }
-.answerLayer, .pdfLinkLayer, .verseLayer { position: absolute; inset: 0; pointer-events: none; }
+.answerLayer, .answerTapLayer, .pdfLinkLayer, .verseLayer { position: absolute; inset: 0; pointer-events: none; }
+.answerTapTarget { position: absolute; z-index: 3; pointer-events: auto; cursor: text; }
 .answerField {
-  position: absolute; z-index: 3; min-width: 72px; min-height: 26px; pointer-events: auto;
-  resize: none; overflow: auto; padding: 2px 4px; border: 2px solid var(--focus);
-  border-radius: 5px; background: rgba(255,255,255,0.92); color: #102F52;
+  position: absolute; z-index: 4; min-width: 0; min-height: 0; pointer-events: auto;
+  resize: none; overflow: auto; scrollbar-width: none; padding: 0 1px; border: 0;
+  border-radius: 0; background: transparent; color: #102F52;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-  font-weight: 550; line-height: 1.15; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  font-weight: 550; line-height: 1.15; box-shadow: none;
 }
-.answerField.line { border-width: 0 0 2px; border-radius: 3px 3px 0 0; background: rgba(255,255,255,0.92); box-shadow: none; }
-.answerField.box { background: rgba(255,255,255,0.92); }
-.answerField:focus { outline: 3px solid var(--focus); outline-offset: 2px; border-color: var(--focus); background: #fff; }
+.answerField::-webkit-scrollbar { display: none; }
+.answerField.line { border-radius: 0; }
+.answerField.box { background: transparent; }
+.answerField:focus { outline: 2px solid var(--focus); outline-offset: -2px; border-color: var(--focus); background: rgba(255,255,255,0.3); }
 .answerCheck {
-  position: absolute; z-index: 3; padding: 0; border: 0; background: transparent; pointer-events: auto;
+  position: absolute; z-index: 4; padding: 0; border: 0; background: transparent; pointer-events: auto;
   color: #0A6BCE; font-size: 15px; font-weight: 800; line-height: 1; cursor: pointer;
   display: grid; place-items: center; touch-action: manipulation;
 }
-.answerCheck::before { content: ''; grid-area: 1 / 1; width: 22px; height: 22px; border: 2px solid var(--focus); border-radius: 4px; background: rgba(255,255,255,0.92); }
+.answerCheck::before { content: ''; grid-area: 1 / 1; box-sizing: border-box; width: 100%; height: 100%; max-width: 22px; max-height: 22px; border: 1px solid var(--focus); border-radius: 1px; background: rgba(255,255,255,0.92); }
 .answerCheck::after { content: ''; grid-area: 1 / 1; z-index: 1; }
-.answerCheck.on::after { content: '✓'; transform: scale(1.25); }
+.answerCheck.on::after { content: '✓'; }
+.answerRadio::before { border-radius: 50%; }
 .answerCheck:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 .pdfLink, .verseRef {
   position: absolute; z-index: 1; padding: 0; cursor: pointer; touch-action: manipulation; pointer-events: auto;
-  background: rgba(0,95,204,0.001); border: 0; border-bottom: 2px solid #005FBE; border-radius: 3px;
+  background: rgba(0,95,204,0.001); border: 0; border-radius: 3px;
 }
 .pdfLink:hover, .pdfLink:focus-visible { background: rgba(0,95,204,0.14); outline: 3px solid var(--focus); outline-offset: 1px; }
 .verseRef {
   z-index: 2;
 }
-.verseRef:hover, .verseRef:focus-visible { background: rgba(0,113,227,0.14); outline: 3px solid var(--focus); outline-offset: 1px; }
+.verseRef:hover, .verseRef:focus { background: transparent; outline: none; }
+.verseHighlight { position: absolute; pointer-events: none; border-radius: 2px; }
+.verseRef:hover .verseHighlight, .verseRef:focus .verseHighlight { background: rgba(0,113,227,0.18); }
+.verseRef:focus-visible .verseHighlight { background: rgba(0,113,227,0.26); outline: 2px solid var(--focus); outline-offset: 1px; }
 .verseModal {
-  position: fixed; inset: 0; z-index: 60; display: grid; place-items: end center;
-  background: rgba(0,0,0,0.35); padding: 16px 12px calc(16px + env(safe-area-inset-bottom));
+  position: fixed; inset: 0 auto auto 0; width: 100%; height: 100%; z-index: 60;
+  display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: end center;
+  background: rgba(0,0,0,0.35);
+  padding: calc(16px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
 }
 .verseModal[hidden] { display: none; }
 .verseCard {
-  width: min(560px, 100%); max-height: min(70vh, 640px); overflow: auto;
-  background: #fff; border-radius: 16px; padding: 18px 18px 14px;
+  width: min(560px, 100%); min-width: 0; min-height: 0; max-height: min(70vh, 640px, 100%);
+  overflow: auto; overflow-wrap: anywhere; overscroll-behavior: contain;
+  background: #fff; border-radius: 16px; padding: 18px min(18px, 5%) 14px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.25);
 }
 .verseTitle { margin: 0 0 8px; font-size: 24px; line-height: 1.25; }
@@ -242,7 +250,8 @@ input[type=search]:focus { border-color: var(--focus); background: #fff; }
 .verseText p { margin: 0 0 12px; font-size: 19px; line-height: 1.62; }
 .verseText sup { color: var(--accent); font-weight: 700; margin-right: 2px; }
 .verseVersion { margin: 10px 0 0; color: var(--text2); font-size: 15px; }
-.verseActions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.verseActions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.verseActions .wBtn { min-width: 0; max-width: 100%; padding-inline: min(14px, 8%); }
 @media (min-width: 640px) {
   .verseModal { place-items: center; }
 }
@@ -265,7 +274,7 @@ input[type=search]:focus { border-color: var(--focus); background: #fff; }
   .readerNav .title { overflow: visible; white-space: normal; text-overflow: clip; line-height: 1.25; text-align: center; }
   .readerNav .navBtn { min-width: 72px; padding-inline: 10px; }
   .answerTools { display: grid; grid-template-columns: minmax(0, 1fr); gap: 7px; overflow: visible; }
-  .zoomTools, .answerActions { justify-content: center; flex-wrap: wrap; }
+  .answerActions { justify-content: center; flex-wrap: wrap; }
   .answerHint { min-width: 0; text-align: center; }
   .toolSpacer { display: none; }
 }
@@ -298,15 +307,12 @@ input[type=search]:focus { border-color: var(--focus); background: #fff; }
   .readerNav .navBtn { min-width: 0; padding: 8px 9px; font-size: 14px; }
   .readerNav .title { overflow: visible; white-space: normal; text-overflow: clip; font-size: 14px; line-height: 1.25; text-align: center; }
   .answerTools { display: grid; grid-template-columns: 1fr; padding: 7px 8px; gap: 6px; overflow: visible; }
-  .zoomTools { justify-content: center; flex-wrap: wrap; }
   .answerActions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .answerTools .wBtn { padding: 8px 8px; font-size: 13px; line-height: 1.15; text-align: center; }
   .answerActions .wBtn { width: 100%; }
   .answerHint { display: none; }
   .toolSpacer { display: none; }
   .pdfArea { padding: 12px 8px 30px; }
-  .answerField { min-width: 36px; min-height: 20px; padding: 1px 3px; }
-  .answerField:focus { min-height: 44px; }
   .pdfNav { width: calc(100vw - 16px); }
   nav .inner { padding: 0 14px; }
   .manageLink { font-size: 14px; }

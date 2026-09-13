@@ -55,6 +55,12 @@ async function load() {
     return;
   }
   presentation = await response.json();
+  if (window.LessonCompanions?.get(presentation.course.id, presentation.lesson)) {
+    const query = new URLSearchParams({ c: courseId, l: lessonId });
+    if (params.get('solo') === '1') query.set('solo', '1');
+    location.replace(`leer.html?${query}`);
+    return;
+  }
   document.title = `${presentation.lesson.title} · ${presentation.course.name}`;
   document.getElementById('title').textContent = presentation.lesson.title;
   document.getElementById('back').href = `curso.html?c=${encodeURIComponent(presentation.course.id)}`;

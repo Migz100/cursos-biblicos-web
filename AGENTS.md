@@ -21,7 +21,8 @@ The complete supporting source library is at `N:\projects\personal\Personal\Curs
 1. Inspect the relevant code and preserve unrelated behavior.
 2. Make the smallest complete change that works on iPhone, iPad, and desktop.
 3. Keep accessibility, Spanish copy, touch targets, and safe-area insets intact.
-4. Run `npm test` and `npm run check` after an edit.
+   Keep original printed answer lines as the only idle underline. Highlight Bible citation text without decorating the larger invisible tap target. Use native finger pinch zoom and pan, with no custom zoom or rotation buttons or forced scaling limits.
+4. Run `npm test` and `npm run check` after an edit. For touch fixes, activate controls through pointer/touch events and verify actual text input, selection persistence, and PDF export. Setting values or forcing focus in a test is not touch proof; emulation does not verify the physical iPhone keyboard. For PDF text loading changes, also test with ReadableStream async iteration unavailable.
 5. Do not commit, push, or deploy. The local coding host performs those steps only after the user explicitly chooses Publish.
 
 Never open, read, print, transmit, or edit `.env*`, `.vercel/`, `.code-host/`, credential files, or provider configuration. Keep the private-link checks and encrypted relay intact. Do not add a login screen unless Miguel explicitly asks for one.
