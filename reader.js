@@ -1,19 +1,41 @@
 import * as pdfjsLib from './vendor/pdf.min.mjs';
 
+const t = (es, en) => globalThis.CourseUI?.t(es, en) || es;
+function setReaderLabel(element, es, en, attribute = 'textContent') {
+  element._readerLabels ||= {};
+  element._readerLabels[attribute] = [es, en];
+  element.dataset.readerUi = '1';
+  if (attribute === 'textContent') element.textContent = t(es, en);
+  else element.setAttribute(attribute, t(es, en));
+}
+
+window.addEventListener('course-language-change', () => {
+  document.querySelectorAll('[data-reader-ui]').forEach(element => {
+    for (const [attribute, labels] of Object.entries(element._readerLabels || {})) {
+      if (attribute === 'textContent') element.textContent = t(...labels);
+      else element.setAttribute(attribute, t(...labels));
+    }
+  });
+  document.querySelectorAll('[data-reader-aria-es]').forEach(element => {
+    element.setAttribute('aria-label', t(element.dataset.readerAriaEs, element.dataset.readerAriaEn));
+  });
+});
+
 const params = new URLSearchParams(location.search);
-const cid = params.get('c') || '1';
-const lessonParam = params.get('l') || '1-01';
-const soloMode = params.get('solo') === '1';
+const sharedMode = params.has('s');
+const shareId = params.getAll('s').length === 1 ? params.get('s') : '';
+const cid = params.get('c') || (sharedMode ? '' : '1');
+const lessonParam = params.get('l') || (sharedMode ? '' : '1-01');
+const soloMode = !sharedMode && params.get('solo') === '1';
 const ANSWER_PREFIX = 'cursosBiblicosText_v1_';
-const MIN_ZOOM = 0.65;
-const MAX_ZOOM = 2.5;
+const ROTATION_PREFIX = 'cursosBiblicosReaderRotation_v1_';
 
 let course = null;
 let lessons = [];
 let lesson = null;
 let pdfDoc = null;
 let pageNum = 1;
-let zoomFactor = 1;
+let pageRotations = {};
 let renderTasks = new Map();
 let renderObserver = null;
 let renderSequence = 0;
@@ -25,6 +47,8 @@ let answerState = { values: {}, fields: {} };
 let clearBackup = null;
 let clearTimer = null;
 let lastAreaWidth = 0;
+let lastAreaHeight = 0;
+let buildingStack = false;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.mjs';
 
@@ -66,7 +90,40 @@ function currentFieldDocument() {
   const document = fieldCatalog.documents?.[`${cid}|${lesson?.id}`] ||
     fieldCatalog.documents?.[`${cid}|${lesson?.legacyNumber}`];
   if (!document) return null;
-  return !document.url || cleanPath(document.url) === cleanPath(lesson.url) ? document : null;
+  if (document.url && cleanPath(document.url) !== cleanPath(lesson.url)) return null;
+  // A Blob URL can be overwritten while keeping the same pathname.  The field
+  // catalog records every source page (including pages without fields), so a
+  // page-count mismatch proves that its coordinates belong to an older PDF.
+  const catalogPageCount = Object.keys(document.pages || {}).length;
+  if (catalogPageCount && pdfDoc?.numPages && catalogPageCount !== pdfDoc.numPages) return null;
+  return document;
+}
+
+function rotationKey() {
+  return `${ROTATION_PREFIX}${cid}_${lesson?.id || lessonParam}_${shortHash(lesson?.url || 'sin-archivo')}`;
+}
+
+function loadRotations() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(rotationKey()) || '{}');
+    pageRotations = Object.fromEntries(Object.entries(stored).filter(([page, degrees]) =>
+      /^\d+$/.test(page) && [0, 90, 180, 270].includes(Number(degrees))
+    ));
+  } catch {
+    pageRotations = {};
+  }
+}
+
+function rotateGeometry(field, degrees = 0) {
+  const rotation = ((Number(degrees) % 360) + 360) % 360;
+  const x = Number(field.x) || 0;
+  const y = Number(field.y) || 0;
+  const w = Number(field.w) || 0;
+  const h = Number(field.h) || 0;
+  if (rotation === 90) return { ...field, x: 1 - y - h, y: x, w: h, h: w, rotated: true };
+  if (rotation === 180) return { ...field, x: 1 - x - w, y: 1 - y - h, w, h, rotated: true };
+  if (rotation === 270) return { ...field, x: y, y: 1 - x - w, w: h, h: w, rotated: true };
+  return { ...field };
 }
 
 function fieldId(page, field) {
@@ -77,16 +134,26 @@ function fieldId(page, field) {
 function mergeFields(fields) {
   const merged = [];
   for (const field of fields) {
+    const trusted = field.native || field.verified || field.rotated;
+    const x = Number(field.x) || 0;
+    const y = Number(field.y) || 0;
     const normalized = {
-      x: Math.max(0, Math.min(0.99, Number(field.x) || 0)),
-      y: Math.max(0, Math.min(0.99, Number(field.y) || 0)),
-      w: Math.max(0.04, Math.min(1, Number(field.w) || 0.2)),
-      h: Math.max(0.018, Math.min(0.25, Number(field.h) || 0.038)),
-      kind: ['box', 'widget', 'check'].includes(field.kind) ? field.kind : 'line',
+      x: Math.max(0, Math.min(trusted ? 1 : 0.99, x)),
+      y: Math.max(0, Math.min(trusted ? 1 : 0.99, y)),
+      w: trusted ? Math.max(0, Number(field.w) || 0) - Math.max(0, -x) : Math.max(0.04, Math.min(1, Number(field.w) || 0.2)),
+      h: trusted ? Math.max(0, Number(field.h) || 0) - Math.max(0, -y) : Math.max(0.018, Math.min(0.25, Number(field.h) || 0.038)),
+      kind: ['box', 'widget', 'check', 'radio'].includes(field.kind) ? field.kind : 'line',
+      ...(field.group ? { group: field.group } : {}),
+      ...(field.native ? { native: true } : {}),
+      ...(field.verified ? { verified: true } : {}),
+      ...(field.textScale > 0 ? { textScale: field.textScale } : {}),
+      ...(/^#[0-9a-f]{6}$/i.test(field.color || '') ? { color: field.color } : {}),
+      ...(field.rotated ? { rotated: true } : {}),
       ...(field.id ? { id: field.id } : {})
     };
     normalized.w = Math.min(normalized.w, 1 - normalized.x);
     normalized.h = Math.min(normalized.h, 1 - normalized.y);
+    if (normalized.w <= 0 || normalized.h <= 0) continue;
     const duplicate = merged.some(existing => {
       const xOverlap = Math.max(0, Math.min(existing.x + existing.w, normalized.x + normalized.w) - Math.max(existing.x, normalized.x));
       const yOverlap = Math.max(0, Math.min(existing.y + existing.h, normalized.y + normalized.h) - Math.max(existing.y, normalized.y));
@@ -338,35 +405,56 @@ function detectedCheckboxes(data, width, height, minY, maxY) {
   return found;
 }
 
-async function annotationFields(page, viewport) {
-  const annotations = await page.getAnnotations({ intent: 'display' });
+function annotationRectangle(rect, viewport) {
+  const first = [rect[0], rect[1]];
+  const second = [rect[2], rect[3]];
+  pdfjsLib.Util.applyTransform(first, viewport.transform);
+  pdfjsLib.Util.applyTransform(second, viewport.transform);
+  const left = Math.min(first[0], second[0]);
+  const top = Math.min(first[1], second[1]);
+  return {
+    x: left / viewport.width,
+    y: top / viewport.height,
+    w: Math.abs(second[0] - first[0]) / viewport.width,
+    h: Math.abs(second[1] - first[1]) / viewport.height
+  };
+}
+
+function minimumTargetGeometry(geometry, viewport, minimumPixels = 44) {
+  const minimumWidth = Math.min(1, minimumPixels / Math.max(1, viewport.width));
+  const minimumHeight = Math.min(1, minimumPixels / Math.max(1, viewport.height));
+  const originalWidth = Number(geometry.w) || 0;
+  const originalHeight = Number(geometry.h) || 0;
+  const width = Math.max(originalWidth, minimumWidth);
+  const height = Math.max(originalHeight, minimumHeight);
+  return {
+    ...geometry,
+    x: Math.max(0, Math.min(1 - width, (Number(geometry.x) || 0) - (width - originalWidth) / 2)),
+    y: Math.max(0, Math.min(1 - height, (Number(geometry.y) || 0) - (height - originalHeight) / 2)),
+    w: width,
+    h: height
+  };
+}
+
+function annotationFields(annotations, viewport) {
   return annotations
-    .filter(annotation => (annotation.fieldType === 'Tx' || (annotation.fieldType === 'Btn' && annotation.checkBox)) && Array.isArray(annotation.rect))
+    .filter(annotation => (annotation.fieldType === 'Tx' || (annotation.fieldType === 'Btn' && (annotation.checkBox || annotation.radioButton))) && Array.isArray(annotation.rect))
     .map(annotation => {
-      const first = [annotation.rect[0], annotation.rect[1]];
-      const second = [annotation.rect[2], annotation.rect[3]];
-      pdfjsLib.Util.applyTransform(first, viewport.transform);
-      pdfjsLib.Util.applyTransform(second, viewport.transform);
-      const rectangle = [first[0], first[1], second[0], second[1]];
-      const left = Math.min(rectangle[0], rectangle[2]);
-      const top = Math.min(rectangle[1], rectangle[3]);
       return {
         id: `widget-${annotation.id}`,
-        x: left / viewport.width,
-        y: top / viewport.height,
-        w: Math.abs(rectangle[2] - rectangle[0]) / viewport.width,
-        h: Math.abs(rectangle[3] - rectangle[1]) / viewport.height,
-        kind: annotation.fieldType === 'Btn' ? 'check' : 'widget'
+        ...annotationRectangle(annotation.rect, viewport),
+        kind: annotation.radioButton ? 'radio' : annotation.fieldType === 'Btn' ? 'check' : 'widget',
+        ...(annotation.radioButton ? { group: annotation.fieldName } : {}),
+        native: true
       };
     });
 }
 
 // Rects (fractions of the page) of every printed text glyph run.
-async function printedTextRects(page, viewport) {
-  const textContent = await page.getTextContent();
+function printedTextRects(textContent, viewport) {
   const rects = [];
   for (const item of textContent.items) {
-    if (!item.str || !item.str.trim()) continue;
+    if (!item.str || !item.str.trim() || /^[\s_]+$/.test(item.str)) continue;
     const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
     const fontHeight = Math.hypot(tx[2], tx[3]);
     if (fontHeight < 3) continue;
@@ -398,52 +486,133 @@ function overlapsPrintedText(field, rects) {
   return false;
 }
 
-async function fieldsForPage(page, viewport, canvas, pageNumber) {
-  const annotations = await annotationFields(page, viewport);
+function filterAndRotateFields(fields, rects, extraRotation = 0) {
+  // Decide whether a guessed field covers printed wording in the PDF's
+  // canonical orientation. Rotating both sides before this test introduces
+  // rounding differences that can make a control appear or disappear.
+  const filtered = fields.filter(field => field.native || field.verified || !overlapsPrintedText(field, rects));
+  return mergeFields(filtered.map(field => rotateGeometry({
+    ...field,
+    id: field.id || ['x', 'y', 'w', 'h'].map(key => Number(field[key] || 0).toFixed(4)).join(':')
+  }, extraRotation)));
+}
+
+function fieldsForPage(viewport, canvas, pageNumber, annotations, textContent, extraRotation = 0, canonicalViewport = viewport, canonicalCanvas = canvas) {
+  const fieldsFromAnnotations = annotationFields(annotations, canonicalViewport);
   const fieldDocument = currentFieldDocument();
-  const needsFilter = fieldDocument?.pages?.[String(pageNumber)]?.length || (!annotations.length && !fieldDocument);
-  if (!needsFilter && annotations.length) return mergeFields(annotations);
+  const needsFilter = fieldDocument?.pages?.[String(pageNumber)]?.length || (!fieldsFromAnnotations.length && !fieldDocument);
+  if (!needsFilter && fieldsFromAnnotations.length) {
+    return mergeFields(fieldsFromAnnotations.map(field => rotateGeometry(field, extraRotation)));
+  }
   let detected;
   if (fieldDocument && Object.prototype.hasOwnProperty.call(fieldDocument.pages || {}, String(pageNumber))) {
-    detected = mergeFields([...annotations, ...(fieldDocument.pages[String(pageNumber)] || [])]);
-  } else if (annotations.length) {
-    return mergeFields(annotations);
+    const catalogFields = fieldDocument.pages[String(pageNumber)] || [];
+    detected = mergeFields([...fieldsFromAnnotations, ...catalogFields]);
+  } else if (fieldsFromAnnotations.length) {
+    return mergeFields(fieldsFromAnnotations.map(field => rotateGeometry(field, extraRotation)));
   } else {
-    detected = detectedCanvasFields(canvas);
+    // Without extractable text there is no reliable way to distinguish an
+    // empty square/line from a printed letter or border. Prefer no guessed
+    // control to an overlay that hides lesson wording; native annotations and
+    // a matching field catalog remain available on image-only pages.
+    const hasPrintedText = (textContent.items || []).some(item => String(item.str || '').trim());
+    detected = hasPrintedText ? detectedCanvasFields(canonicalCanvas) : [];
   }
   if (!detected.length) return [];
-  const rects = await printedTextRects(page, viewport);
-  // Catalog/canvas guesses never sit on top of printed glyphs; native widgets do what they want.
-  return mergeFields(detected.filter(field => field.kind === 'widget' || !overlapsPrintedText(field, rects)));
+  const rects = printedTextRects(textContent, canonicalViewport);
+  // Catalog/canvas guesses never sit on top of printed glyphs. Native AcroForm
+  // widgets are authoritative even when their rectangle touches printed text.
+  return filterAndRotateFields(detected, rects, extraRotation);
+}
+
+// Keep answers entered before a field was aligned or given a stable ID.
+function restoreAlignedAnswer(id, field, pageNumber, currentIds = new Set()) {
+  if (Object.prototype.hasOwnProperty.call(answerState.values, id)) return;
+  const matches = Object.entries(answerState.fields).filter(([oldId, old]) => {
+    if (oldId === id || currentIds.has(oldId) || old.page !== pageNumber || !answerState.values[oldId] || old.aliasFor) return false;
+    if (!/^\d+:-?\d+\.\d{4}:-?\d+\.\d{4}:-?\d+\.\d{4}:-?\d+\.\d{4}$/.test(oldId)) return false;
+    if (old.kind !== field.kind) return false;
+    return [0, 90, 180, 270].some(degrees => {
+      const rotated = rotateGeometry(field, degrees);
+      const legacy = { ...rotated, w: Math.max(0.04, rotated.w), h: Math.max(0.018, rotated.h) };
+      const sameLine = field.kind === 'line' && degrees === 0 &&
+        Math.abs(rotated.x - old.x) < 0.005 && Math.abs(rotated.w - old.w) < 0.01 &&
+        Math.abs(rotated.y + rotated.h - old.y - old.h) < 0.003;
+      return sameLine || [rotated, legacy].some(candidate =>
+        ['x', 'y', 'w', 'h'].every(key => Math.abs(candidate[key] - old[key]) < 0.003)
+      );
+    });
+  });
+  if (matches.length !== 1) return;
+  const [oldId, old] = matches[0];
+  answerState.values[id] = answerState.values[oldId];
+  old.aliasFor = id;
 }
 
 function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
+  const answerLabel = (control, es, en) => {
+    control.dataset.readerAriaEs = es;
+    control.dataset.readerAriaEn = en;
+    control.setAttribute('aria-label', globalThis.CourseUI?.t(es, en) || es);
+  };
   const layer = document.createElement('div');
   layer.className = 'answerLayer';
+  const tapLayer = document.createElement('div');
+  tapLayer.className = 'answerTapLayer';
   let visibleCount = 0;
+  const currentIds = new Set(fields.map(field => fieldId(pageNumber, field)));
   fields.forEach((field, index) => {
     const id = fieldId(pageNumber, field);
+    const target = field;
+    const addTapTarget = control => {
+      control.id = `answer-${id}`;
+      const label = document.createElement('label');
+      label.className = 'answerTapTarget';
+      label.htmlFor = control.id;
+      label.setAttribute('aria-hidden', 'true');
+      const choice = field.kind === 'check' || field.kind === 'radio';
+      const padX = choice ? Math.max(4, (24 - field.w * viewport.width) / 2) : 4;
+      const padY = choice ? Math.max(4, (24 - field.h * viewport.height) / 2) : 0;
+      const left = Math.max(0, field.x * viewport.width - padX);
+      const top = Math.max(0, field.y * viewport.height - padY);
+      label.style.left = `${left}px`;
+      label.style.top = `${top}px`;
+      label.style.width = `${Math.min(viewport.width, (field.x + field.w) * viewport.width + padX) - left}px`;
+      label.style.height = `${Math.min(viewport.height, (field.y + field.h) * viewport.height + (choice ? padY : 6)) - top}px`;
+      tapLayer.appendChild(label);
+    };
+    restoreAlignedAnswer(id, field, pageNumber, currentIds);
     answerState.fields[id] = { page: pageNumber, ...field };
-    if (field.kind === 'check') {
+    if (field.kind === 'check' || field.kind === 'radio') {
       const toggle = document.createElement('button');
       toggle.type = 'button';
-      toggle.className = 'answerCheck';
+      toggle.className = `answerCheck${field.kind === 'radio' ? ' answerRadio' : ''}`;
       toggle.dataset.answerId = id;
-      toggle.setAttribute('aria-label', `Marcar casilla ${index + 1} de la página ${pageNumber}`);
+      answerLabel(toggle, `Marcar casilla ${index + 1} de la página ${pageNumber}`, `Check box ${index + 1} on page ${pageNumber}`);
       toggle.setAttribute('aria-pressed', String(answerState.values[id] === '1'));
       if (answerState.values[id] === '1') toggle.classList.add('on');
-      toggle.style.left = `${field.x * 100}%`;
-      toggle.style.top = `${field.y * 100}%`;
-      toggle.style.width = `${field.w * 100}%`;
-      toggle.style.height = `${field.h * 100}%`;
+      toggle.style.left = `${target.x * 100}%`;
+      toggle.style.top = `${target.y * 100}%`;
+      toggle.style.width = `${target.w * 100}%`;
+      toggle.style.height = `${target.h * 100}%`;
+      toggle.style.fontSize = `${Math.max(1, Math.min(18, viewport.height * field.h * 0.8))}px`;
       toggle.addEventListener('click', () => {
-        const next = answerState.values[id] === '1' ? '' : '1';
+        const next = field.kind === 'radio' ? '1' : answerState.values[id] === '1' ? '' : '1';
+        if (field.kind === 'radio') {
+          for (const [otherId, other] of Object.entries(answerState.fields)) {
+            if (other.kind === 'radio' && other.group === field.group && otherId !== id) {
+              delete answerState.values[otherId];
+            }
+          }
+        }
         if (next) answerState.values[id] = next;
         else delete answerState.values[id];
         toggle.classList.toggle('on', Boolean(next));
         toggle.setAttribute('aria-pressed', String(Boolean(next)));
+        if (field.kind === 'radio') syncVisibleAnswers();
         saveAnswers();
       });
+      addTapTarget(toggle);
       layer.appendChild(toggle);
       visibleCount += 1;
       return;
@@ -451,39 +620,121 @@ function createAnswerLayer(pageElement, fields, viewport, pageNumber) {
     const input = document.createElement('textarea');
     input.className = `answerField ${field.kind}`;
     input.dataset.answerId = id;
-    input.rows = field.h > 0.055 ? 2 : 1;
+    input.rows = field.kind !== 'line' && field.h > 0.055 ? 2 : 1;
     input.value = answerState.values[id] || '';
-    input.setAttribute('aria-label', `Respuesta ${index + 1} de la página ${pageNumber}`);
+    answerLabel(input, `Respuesta ${index + 1} de la página ${pageNumber}`, `Answer ${index + 1} on page ${pageNumber}`);
     input.setAttribute('autocomplete', 'off');
     input.setAttribute('spellcheck', 'true');
-    input.style.left = `${field.x * 100}%`;
-    input.style.top = `${field.y * 100}%`;
-    input.style.width = `${field.w * 100}%`;
-    input.style.height = `${field.h * 100}%`;
-    input.style.fontSize = `${Math.max(14, Math.min(22, viewport.height * 0.018))}px`;
+    input.style.left = `${target.x * 100}%`;
+    input.style.top = `${target.y * 100}%`;
+    input.style.width = `${target.w * 100}%`;
+    input.style.height = `${target.h * 100}%`;
+    const lineHeight = Math.min(viewport.height * field.h, viewport.height * (field.textScale || 0.026));
+    input.style.fontSize = `${Math.max(1, Math.min(field.textScale ? Infinity : 22, lineHeight * 0.72))}px`;
+    input.style.lineHeight = `${lineHeight}px`;
+    if (field.color) input.style.color = field.color;
+    if (input.rows === 1) input.style.paddingTop = `${Math.max(0, viewport.height * field.h - lineHeight - 1)}px`;
     input.addEventListener('input', () => {
       answerState.values[id] = input.value;
       saveAnswers();
     });
+    addTapTarget(input);
     layer.appendChild(input);
     visibleCount += 1;
   });
   pageElement.appendChild(layer);
+  pageElement.appendChild(tapLayer);
   pageElement.dataset.fieldCount = String(visibleCount);
   saveAnswers();
   if (pageNumber === pageNum) updateAnswerHint();
 }
 
-// Tap any Bible reference (Juan 3:16, Apoc. 14:6-12...) to read the full verse.
-// Grows a hotspot to a tappable 22px without shifting its visual center.
-function verseHotspotGeometry(y, h, viewportHeight) {
-  const px = h * viewportHeight;
-  if (px >= 22) return { y, h };
-  const extra = (22 - px) / viewportHeight;
-  return { y: Math.max(0, y - extra / 2), h: h + extra };
+function safeExternalUrl(value) {
+  try {
+    const url = new URL(value, location.href);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 
-async function createVerseLayer(pageElement, page, viewport, pageNumber) {
+async function destinationPageNumber(destination) {
+  try {
+    const explicit = typeof destination === 'string' ? await pdfDoc.getDestination(destination) : destination;
+    if (!Array.isArray(explicit) || !explicit.length) return null;
+    const target = explicit[0];
+    if (Number.isInteger(target)) return target + 1;
+    return (await pdfDoc.getPageIndex(target)) + 1;
+  } catch {
+    return null;
+  }
+}
+
+async function createPdfLinkLayer(pageElement, annotations, viewport, pageNumber) {
+  const links = annotations.filter(annotation => Array.isArray(annotation.rect) && (annotation.url || annotation.dest));
+  if (!links.length) return;
+  const layer = document.createElement('div');
+  layer.className = 'pdfLinkLayer';
+  for (const [index, annotation] of links.entries()) {
+    const geometry = minimumTargetGeometry(annotationRectangle(annotation.rect, viewport), viewport);
+    const external = safeExternalUrl(annotation.url);
+    const destination = external ? null : await destinationPageNumber(annotation.dest);
+    if (!external && !destination) continue;
+    const control = document.createElement(external ? 'a' : 'button');
+    control.className = 'pdfLink';
+    control.style.left = `${geometry.x * 100}%`;
+    control.style.top = `${geometry.y * 100}%`;
+    control.style.width = `${geometry.w * 100}%`;
+    control.style.height = `${geometry.h * 100}%`;
+    const label = annotation.title || (external ? 'Abrir enlace de la lección en otra pestaña' : `Ir a la página ${destination}`);
+    const englishLabel = annotation.title || (external ? 'Open the lesson link in a new tab' : `Go to page ${destination}`);
+    setReaderLabel(control, label, englishLabel, 'title');
+    setReaderLabel(control, `${label}, página ${pageNumber}, enlace ${index + 1}`, `${englishLabel}, page ${pageNumber}, link ${index + 1}`, 'aria-label');
+    if (external) {
+      control.href = external;
+      control.target = '_blank';
+      control.rel = 'noopener noreferrer';
+    } else {
+      control.type = 'button';
+      control.addEventListener('click', () => scrollToPage(destination));
+    }
+    layer.appendChild(control);
+  }
+  if (layer.childElementCount) pageElement.appendChild(layer);
+}
+
+function createAccessiblePageText(pageElement, canvas, textContent, pageNumber) {
+  const parts = [];
+  for (const item of textContent.items || []) {
+    const text = String(item.str || '').trim();
+    if (text) parts.push(text);
+    if (item.hasEOL && parts.at(-1) !== '\n') parts.push('\n');
+  }
+  const normalized = parts.join(' ').replace(/\s*\n\s*/g, '\n').replace(/[ \t]+/g, ' ').trim();
+  const description = document.createElement('div');
+  description.className = 'srOnly accessiblePageText';
+  description.id = `accessible-page-${pageNumber}`;
+  setReaderLabel(description,
+    normalized ? `Texto de la página ${pageNumber}: ${normalized}` : `La página ${pageNumber} es una imagen sin texto seleccionable.`,
+    normalized ? `Page ${pageNumber} text: ${normalized}` : `Page ${pageNumber} is an image without selectable text.`);
+  canvas.setAttribute('aria-describedby', description.id);
+  pageElement.appendChild(description);
+  pageElement.dataset.hasAccessibleText = String(Boolean(normalized));
+}
+
+function addVerseHighlight(hotspot, printed, target) {
+  const highlight = document.createElement('span');
+  highlight.className = 'verseHighlight';
+  highlight.setAttribute('aria-hidden', 'true');
+  highlight.style.left = `${(printed.x - target.x) / target.w * 100}%`;
+  highlight.style.top = `${(printed.y - target.y) / target.h * 100}%`;
+  highlight.style.width = `${printed.w / target.w * 100}%`;
+  highlight.style.height = `${printed.h / target.h * 100}%`;
+  hotspot.appendChild(highlight);
+}
+
+// Tap any Bible reference (Juan 3:16, Apoc. 14:6-12...) to read the full verse.
+async function createVerseLayer(pageElement, viewport, pageNumber, textContent, extraRotation = 0) {
   if (typeof BibleVerses === 'undefined') return;
   // OCR-generated catalog covers lessons whose PDFs have no usable text layer.
   const verseDocument = verseCatalog.documents?.[`${cid}|${lesson?.id}`] ||
@@ -495,29 +746,38 @@ async function createVerseLayer(pageElement, page, viewport, pageNumber) {
     if (!catalogRefs.length) return;
     const layer = document.createElement('div');
     layer.className = 'verseLayer';
-    for (const entry of catalogRefs) {
+    const uniqueBooks = [...new Set(catalogRefs.map(entry => entry.bookId))];
+    const bookData = new Map(await Promise.all(uniqueBooks.map(id => BibleVerses.fetchBook(id).then(data => [id, data]))));
+    let rejected = 0;
+    for (const originalEntry of catalogRefs) {
+      const entry = rotateGeometry(originalEntry, extraRotation);
       const match = { bookId: entry.bookId, bookName: entry.bookName, parts: entry.parts };
-      const geo = verseHotspotGeometry(entry.y, entry.h, viewport.height);
+      if (!BibleVerses.referenceIsValid(match, bookData.get(match.bookId))) {
+        rejected += 1;
+        continue;
+      }
+      const target = minimumTargetGeometry(entry, viewport);
       const hotspot = document.createElement('button');
       hotspot.type = 'button';
       hotspot.className = 'verseRef';
-      hotspot.style.left = `${entry.x * 100}%`;
-      hotspot.style.top = `${geo.y * 100}%`;
-      hotspot.style.width = `${entry.w * 100}%`;
-      hotspot.style.height = `${geo.h * 100}%`;
+      hotspot.style.left = `${target.x * 100}%`;
+      hotspot.style.top = `${target.y * 100}%`;
+      hotspot.style.width = `${target.w * 100}%`;
+      hotspot.style.height = `${target.h * 100}%`;
+      addVerseHighlight(hotspot, entry, target);
       const label = BibleVerses.formatReference(match);
       hotspot.title = label;
-      hotspot.setAttribute('aria-label', `Leer ${label} en la Biblia (Reina-Valera 1960)`);
-      hotspot.addEventListener('click', () => openVersePopup(match));
+      setReaderLabel(hotspot, `Leer ${label} en la Biblia (Reina-Valera 1960)`, `Read ${label} in the Bible (Reina-Valera 1960)`, 'aria-label');
+      hotspot.addEventListener('click', () => openVersePopup(match, hotspot));
       layer.appendChild(hotspot);
     }
+    pageElement.dataset.invalidVerseCount = String(rejected);
     pageElement.appendChild(layer);
     return;
   }
-  const textContent = await page.getTextContent();
   const items = [];
   for (const item of textContent.items) {
-    if (!item.str || !item.str.trim()) continue;
+    if (!item.str || !item.str.trim() || /^[\s_]+$/.test(item.str)) continue;
     const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
     const fontHeight = Math.hypot(tx[2], tx[3]);
     if (fontHeight < 3) continue;
@@ -572,18 +832,25 @@ async function createVerseLayer(pageElement, page, viewport, pageNumber) {
     // Keep only the parts that really exist (PDF extraction sometimes merges digits).
     match.parts = match.parts.filter(part => BibleVerses.referenceIsValid({ ...match, parts: [part] }, data));
     if (!match.parts.length) continue;
-    const geo = verseHotspotGeometry(line.y / viewport.height, Math.max(lineHeight, 10) / viewport.height, viewport.height);
+    const printed = {
+      x: startX / viewport.width,
+      y: line.y / viewport.height,
+      w: (endX - startX) / viewport.width,
+      h: lineHeight / viewport.height
+    };
+    const target = minimumTargetGeometry({ ...printed, h: Math.max(lineHeight, 10) / viewport.height }, viewport);
     const hotspot = document.createElement('button');
     hotspot.type = 'button';
     hotspot.className = 'verseRef';
-    hotspot.style.left = `${(startX / viewport.width) * 100}%`;
-    hotspot.style.top = `${geo.y * 100}%`;
-    hotspot.style.width = `${((endX - startX) / viewport.width) * 100}%`;
-    hotspot.style.height = `${geo.h * 100}%`;
+    hotspot.style.left = `${target.x * 100}%`;
+    hotspot.style.top = `${target.y * 100}%`;
+    hotspot.style.width = `${target.w * 100}%`;
+    hotspot.style.height = `${target.h * 100}%`;
+    addVerseHighlight(hotspot, printed, target);
     const label = BibleVerses.formatReference(match);
     hotspot.title = label;
-    hotspot.setAttribute('aria-label', `Leer ${label} en la Biblia (Reina-Valera 1960)`);
-    hotspot.addEventListener('click', () => openVersePopup(match));
+    setReaderLabel(hotspot, `Leer ${label} en la Biblia (Reina-Valera 1960)`, `Read ${label} in the Bible (Reina-Valera 1960)`, 'aria-label');
+    hotspot.addEventListener('click', () => openVersePopup(match, hotspot));
     layer.appendChild(hotspot);
     count += 1;
   }
@@ -591,6 +858,17 @@ async function createVerseLayer(pageElement, page, viewport, pageNumber) {
 }
 
 let verseModal = null;
+let verseReturnFocus = null;
+
+function fitVerseModal() {
+  const viewport = window.visualViewport;
+  if (!verseModal || verseModal.hidden || !viewport) return;
+  // Safari can zoom and pan the visible area without resizing the page layout.
+  verseModal.style.left = `${viewport.offsetLeft}px`;
+  verseModal.style.top = `${viewport.offsetTop}px`;
+  verseModal.style.width = `${viewport.width}px`;
+  verseModal.style.height = `${viewport.height}px`;
+}
 
 function ensureVerseModal() {
   if (verseModal) return verseModal;
@@ -600,7 +878,7 @@ function ensureVerseModal() {
   modal.innerHTML = `
     <div class="verseCard" role="dialog" aria-modal="true" aria-labelledby="verseTitle">
       <h2 class="verseTitle" id="verseTitle"></h2>
-      <div class="verseText" id="verseText"></div>
+      <div class="verseText" id="verseText" aria-live="polite"></div>
       <p class="verseVersion">Reina-Valera 1960</p>
       <div class="verseActions">
         <button type="button" class="wBtn" id="verseCopy">Copiar</button>
@@ -608,32 +886,62 @@ function ensureVerseModal() {
       </div>
     </div>`;
   document.body.appendChild(modal);
-  const close = () => { modal.hidden = true; };
+  setReaderLabel(modal.querySelector('#verseCopy'), 'Copiar', 'Copy');
+  setReaderLabel(modal.querySelector('#verseClose'), 'Cerrar', 'Close');
+  const close = () => {
+    modal.hidden = true;
+    const target = verseReturnFocus;
+    verseReturnFocus = null;
+    if (target?.isConnected) target.focus({ preventScroll: true });
+  };
   modal.addEventListener('click', event => { if (event.target === modal) close(); });
   modal.querySelector('#verseClose').addEventListener('click', close);
   modal.querySelector('#verseCopy').addEventListener('click', event => {
     const text = `${modal.querySelector('#verseTitle').textContent}\n${modal.querySelector('#verseText').innerText}\nReina-Valera 1960`;
     navigator.clipboard?.writeText(text).then(() => {
-      event.target.textContent = 'Copiado';
-      setTimeout(() => { event.target.textContent = 'Copiar'; }, 1600);
+      setReaderLabel(event.target, 'Copiado', 'Copied');
+      setTimeout(() => { setReaderLabel(event.target, 'Copiar', 'Copy'); }, 1600);
     }).catch(() => {});
   });
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !modal.hidden) close();
+    if (modal.hidden) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      close();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const controls = [...modal.querySelectorAll('button:not([disabled]), a[href]')];
+    if (!controls.length) return;
+    const first = controls[0];
+    const last = controls.at(-1);
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   });
+  window.visualViewport?.addEventListener('resize', fitVerseModal, { passive: true });
+  window.visualViewport?.addEventListener('scroll', fitVerseModal, { passive: true });
   verseModal = modal;
   return modal;
 }
 
-async function openVersePopup(ref) {
+async function openVersePopup(ref, trigger) {
   const modal = ensureVerseModal();
   const title = modal.querySelector('#verseTitle');
   const body = modal.querySelector('#verseText');
   title.textContent = BibleVerses.formatReference(ref);
-  body.textContent = 'Buscando el texto...';
+  setReaderLabel(body, 'Buscando el texto...', 'Looking up the passage...');
+  verseReturnFocus = trigger || document.activeElement;
   modal.hidden = false;
+  fitVerseModal();
+  modal.querySelector('#verseClose').focus({ preventScroll: true });
   const blocks = await BibleVerses.resolveReference(ref, 'assets/bible/rvr1960/');
   body.replaceChildren();
+  delete body._readerLabels.textContent;
   let any = false;
   for (const block of blocks) {
     if (blocks.length > 1) {
@@ -652,13 +960,13 @@ async function openVersePopup(ref) {
       body.appendChild(p);
     }
   }
-  if (!any) body.textContent = 'No se encontró este texto. Revisa la cita en la lección.';
+  if (!any) setReaderLabel(body, 'No se encontró este texto. Revisa la cita en la lección.', 'This passage could not be found. Check the reference in the lesson.');
 }
 
 function loadingElement(pageNumber) {
   const loading = document.createElement('span');
   loading.className = 'pageLoading';
-  loading.textContent = `Cargando página ${pageNumber}...`;
+  setReaderLabel(loading, `Cargando página ${pageNumber}...`, `Loading page ${pageNumber}...`);
   return loading;
 }
 
@@ -666,11 +974,15 @@ function pageElement(metric) {
   const page = document.createElement('div');
   page.className = 'pg';
   page.dataset.pageNumber = String(metric.number);
+  page.dataset.rotation = String(metric.extraRotation || 0);
   page.dataset.rendered = 'false';
+  page.hidden = isPresentation() && metric.number !== pageNum;
   page.style.width = `${metric.width}px`;
   page.style.height = `${metric.height}px`;
   page.setAttribute('role', 'group');
-  page.setAttribute('aria-label', `Página ${metric.number} de ${pdfDoc.numPages}`);
+  setReaderLabel(page,
+    `Página ${metric.number} de ${pdfDoc.numPages}${metric.extraRotation ? `, girada ${metric.extraRotation} grados` : ''}`,
+    `Page ${metric.number} of ${pdfDoc.numPages}${metric.extraRotation ? `, rotated ${metric.extraRotation} degrees` : ''}`, 'aria-label');
   page.appendChild(loadingElement(metric.number));
   return page;
 }
@@ -680,19 +992,51 @@ function cancelRenderTasks() {
   renderTasks = new Map();
 }
 
+async function readPageTextContent(page) {
+  if (page.isPureXfa) return page.getTextContent();
+  // Safari before 26.4 supports stream readers but not async stream iteration.
+  const reader = page.streamTextContent().getReader();
+  const textContent = { items: [], styles: Object.create(null), lang: null };
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) return textContent;
+      textContent.lang ??= value.lang;
+      Object.assign(textContent.styles, value.styles);
+      textContent.items.push(...value.items);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+async function renderCanonicalFieldCanvas(page, rotation) {
+  const unitViewport = page.getViewport({ scale: 1, rotation });
+  const scale = 1200 / Math.max(1, unitViewport.width);
+  const viewport = page.getViewport({ scale, rotation });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.ceil(viewport.width));
+  canvas.height = Math.max(1, Math.ceil(viewport.height));
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  await page.render({ canvasContext: context, viewport }).promise;
+  return canvas;
+}
+
 function updateAnswerHint() {
   const hint = document.getElementById('answerHint');
   const current = document.querySelector(`.pg[data-page-number="${pageNum}"]`);
   if (!current || current.dataset.rendered !== 'true') {
-    hint.textContent = (pdfDoc?.numPages || 1) > 1
-      ? `Página ${pageNum} de ${pdfDoc.numPages}. Desliza hacia abajo para continuar.`
-      : 'Cargando la página...';
+    if ((pdfDoc?.numPages || 1) > 1) setReaderLabel(hint,
+      `Página ${pageNum} de ${pdfDoc.numPages}. Desliza hacia abajo para continuar.`,
+      `Page ${pageNum} of ${pdfDoc.numPages}. Scroll down to continue.`);
+    else setReaderLabel(hint, 'Cargando la página...', 'Loading the page...');
     return;
   }
   const visibleCount = Number(current.dataset.fieldCount || 0);
-  hint.textContent = visibleCount
-    ? `${visibleCount} ${visibleCount === 1 ? 'espacio listo' : 'espacios listos'} para escribir en esta página.`
-    : 'Esta página no tiene espacios de respuesta detectados.';
+  if (visibleCount) setReaderLabel(hint,
+    `${visibleCount} ${visibleCount === 1 ? 'espacio listo' : 'espacios listos'} para escribir en esta página.`,
+    `${visibleCount} answer ${visibleCount === 1 ? 'space is' : 'spaces are'} ready on this page.`);
+  else setReaderLabel(hint, 'Esta página no tiene espacios de respuesta detectados.', 'No answer spaces were detected on this page.');
 }
 
 async function renderPageElement(element, sequence) {
@@ -703,7 +1047,7 @@ async function renderPageElement(element, sequence) {
   element.dataset.rendering = 'true';
   const page = await pdfDoc.getPage(pageNumber);
   if (sequence !== renderSequence || element.dataset.rendering !== 'true') return;
-  const viewport = page.getViewport({ scale: metric.scale });
+  const viewport = page.getViewport({ scale: metric.scale, rotation: metric.rotation });
   const dpr = Math.min(2.5, window.devicePixelRatio || 1);
   const canvas = document.createElement('canvas');
   canvas.className = 'pdfCanvas';
@@ -712,7 +1056,7 @@ async function renderPageElement(element, sequence) {
   canvas.style.width = `${viewport.width}px`;
   canvas.style.height = `${viewport.height}px`;
   canvas.setAttribute('role', 'img');
-  canvas.setAttribute('aria-label', `Contenido de la página ${pageNumber}`);
+  setReaderLabel(canvas, `Contenido de la página ${pageNumber}`, `Page ${pageNumber} content`, 'aria-label');
   element.replaceChildren(canvas);
   const context = canvas.getContext('2d');
   context.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -727,10 +1071,35 @@ async function renderPageElement(element, sequence) {
     if (renderTasks.get(pageNumber) === task) renderTasks.delete(pageNumber);
   }
   if (sequence !== renderSequence || element.dataset.rendering !== 'true' || !element.isConnected) return;
-  const fields = await fieldsForPage(page, viewport, canvas, pageNumber);
+  const [annotations, textContent] = await Promise.all([
+    page.getAnnotations({ intent: 'display' }),
+    readPageTextContent(page)
+  ]);
+  const canonicalRotation = ((metric.rotation - metric.extraRotation) % 360 + 360) % 360;
+  const canonicalViewport = page.getViewport({ scale: metric.scale, rotation: canonicalRotation });
+  const fieldDocument = currentFieldDocument();
+  const hasCatalogPage = Boolean(fieldDocument && Object.prototype.hasOwnProperty.call(fieldDocument.pages || {}, String(pageNumber)));
+  const hasNativeFields = annotationFields(annotations, canonicalViewport).length > 0;
+  const hasPrintedText = (textContent.items || []).some(item => String(item.str || '').trim());
+  let canonicalCanvas = canvas;
+  if (!hasCatalogPage && !hasNativeFields && hasPrintedText) {
+    canonicalCanvas = await renderCanonicalFieldCanvas(page, canonicalRotation);
+  }
+  const fields = fieldsForPage(
+    viewport,
+    canvas,
+    pageNumber,
+    annotations,
+    textContent,
+    metric.extraRotation,
+    canonicalViewport,
+    canonicalCanvas
+  );
   if (sequence !== renderSequence || element.dataset.rendering !== 'true' || !element.isConnected) return;
   createAnswerLayer(element, fields, viewport, pageNumber);
-  createVerseLayer(element, page, viewport, pageNumber).catch(() => {});
+  await createPdfLinkLayer(element, annotations, viewport, pageNumber);
+  createAccessiblePageText(element, canvas, textContent, pageNumber);
+  await createVerseLayer(element, viewport, pageNumber, textContent, metric.extraRotation).catch(() => {});
   element.dataset.rendered = 'true';
   element.dataset.rendering = 'false';
   if (Math.abs(pageNumber - pageNum) > 3) {
@@ -769,12 +1138,29 @@ function renderNearbyPages() {
   });
 }
 
+function isPresentation() {
+  return document.querySelector('.reader').classList.contains('is-fullscreen');
+}
+
+function showPresentationPage() {
+  document.querySelectorAll('.pg').forEach(element => {
+    element.hidden = Number(element.dataset.pageNumber) !== pageNum;
+  });
+  const area = document.getElementById('pdfArea');
+  area.scrollTop = 0;
+  area.scrollLeft = 0;
+  trimDistantPages();
+  renderNearbyPages();
+  updatePageHint();
+  updateAnswerHint();
+}
+
 function updateCurrentPageFromScroll() {
   scrollFrame = null;
+  if (isPresentation() || buildingStack) return;
   const area = document.getElementById('pdfArea');
   const areaRect = area.getBoundingClientRect();
-  const navHeight = document.querySelector('.pdfNav')?.offsetHeight || 0;
-  const targetY = areaRect.top + navHeight + Math.max(80, (areaRect.height - navHeight) * 0.35);
+  const targetY = areaRect.top + Math.max(80, areaRect.height * 0.35);
   let nearest = null;
   if (area.scrollTop <= 2) {
     nearest = { element: document.querySelector('.pg'), distance: 0 };
@@ -791,7 +1177,7 @@ function updateCurrentPageFromScroll() {
     const nextPage = Number(nearest.element.dataset.pageNumber);
     if (nextPage !== pageNum) {
       pageNum = nextPage;
-      updatePageNavigation();
+      updatePageHint();
       updateAnswerHint();
     }
   }
@@ -800,89 +1186,104 @@ function updateCurrentPageFromScroll() {
 }
 
 function scheduleCurrentPageUpdate() {
-  if (scrollFrame !== null) return;
+  if (isPresentation() || buildingStack || scrollFrame !== null) return;
   scrollFrame = requestAnimationFrame(updateCurrentPageFromScroll);
 }
 
 function scrollToPage(number, behavior = 'smooth') {
   if (!pdfDoc) return;
   pageNum = Math.max(1, Math.min(pdfDoc.numPages, number));
+  if (isPresentation()) { showPresentationPage(); return; }
   const area = document.getElementById('pdfArea');
   const target = document.querySelector(`.pg[data-page-number="${pageNum}"]`);
   if (!target) return;
   const areaRect = area.getBoundingClientRect();
   const targetTop = target.getBoundingClientRect().top - areaRect.top + area.scrollTop;
-  const navHeight = document.querySelector('.pdfNav')?.offsetHeight || 0;
-  area.scrollTo({ top: Math.max(0, targetTop - navHeight - 8), left: area.scrollLeft, behavior });
-  updatePageNavigation();
+  area.scrollTo({ top: Math.max(0, targetTop - 8), left: area.scrollLeft, behavior });
+  updatePageHint();
   updateAnswerHint();
 }
 
-async function buildPageStack({ preservePage = false } = {}) {
+async function buildPageStack({ preservePage = false, preserveOffset = true } = {}) {
   if (!pdfDoc) return;
   const area = document.getElementById('pdfArea');
   const box = document.getElementById('pdfBox');
+  const presentation = isPresentation();
   const anchor = preservePage ? document.querySelector(`.pg[data-page-number="${pageNum}"]`) : null;
-  const anchorOffset = anchor ? anchor.getBoundingClientRect().top - area.getBoundingClientRect().top : 0;
+  const anchorPage = pageNum;
+  const areaRect = area.getBoundingClientRect();
+  const anchorOffset = anchor && preserveOffset ? anchor.getBoundingClientRect().top - areaRect.top : 8;
+  area.dataset.allowHorizontalScroll = 'false';
   cancelRenderTasks();
   renderObserver?.disconnect();
   const sequence = ++renderSequence;
-  const fitWidth = Math.min(1000, Math.max(260, area.clientWidth - 24));
-  const metrics = await Promise.all(Array.from({ length: pdfDoc.numPages }, async (_, index) => {
-    const number = index + 1;
-    const page = await pdfDoc.getPage(number);
-    const baseViewport = page.getViewport({ scale: 1 });
-    const scale = fitWidth / baseViewport.width * zoomFactor;
-    const viewport = page.getViewport({ scale });
-    return { number, scale, width: viewport.width, height: viewport.height };
-  }));
-  if (sequence !== renderSequence) return;
-  pageMetrics = metrics;
-  const fragment = document.createDocumentFragment();
-  metrics.forEach(metric => fragment.appendChild(pageElement(metric)));
-  box.replaceChildren(fragment);
-  renderObserver = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) renderPageElement(entry.target, sequence).catch(() => {});
-    });
-  }, { root: area, rootMargin: '75% 0px' });
-  box.querySelectorAll('.pg').forEach(element => renderObserver.observe(element));
-  if (preservePage) {
-    const nextAnchor = document.querySelector(`.pg[data-page-number="${pageNum}"]`);
-    if (nextAnchor) {
-      const nextOffset = nextAnchor.getBoundingClientRect().top - area.getBoundingClientRect().top;
-      area.scrollTop += nextOffset - anchorOffset;
+  buildingStack = true;
+  try {
+    const style = getComputedStyle(area);
+    const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+    const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+    const fitWidth = presentation ? Math.max(1, area.clientWidth - paddingX) : Math.min(1000, Math.max(260, area.clientWidth - 24));
+    const fitHeight = Math.max(1, area.clientHeight - paddingY);
+    const metrics = await Promise.all(Array.from({ length: pdfDoc.numPages }, async (_, index) => {
+      const number = index + 1;
+      const page = await pdfDoc.getPage(number);
+      const extraRotation = Number(pageRotations[String(number)] || 0);
+      const rotation = (Number(page.rotate || 0) + extraRotation) % 360;
+      const baseViewport = page.getViewport({ scale: 1, rotation });
+      const scale = presentation ? Math.min(fitWidth / baseViewport.width, fitHeight / baseViewport.height) : fitWidth / baseViewport.width;
+      const viewport = page.getViewport({ scale, rotation });
+      return { number, scale, rotation, extraRotation, width: viewport.width, height: viewport.height };
+    }));
+    if (sequence !== renderSequence) return;
+    pageMetrics = metrics;
+    const fragment = document.createDocumentFragment();
+    metrics.forEach(metric => fragment.appendChild(pageElement(metric)));
+    box.replaceChildren(fragment);
+    if (presentation) {
+      showPresentationPage();
+    } else {
+      renderObserver = new IntersectionObserver(entries => {
+        if (sequence !== renderSequence || isPresentation()) return;
+        entries.forEach(entry => {
+          if (entry.isIntersecting) renderPageElement(entry.target, sequence).catch(() => {});
+        });
+      }, { root: area, rootMargin: '75% 0px' });
+      box.querySelectorAll('.pg').forEach(element => renderObserver.observe(element));
+      if (preservePage) {
+        const nextAnchor = document.querySelector(`.pg[data-page-number="${anchorPage}"]`);
+        if (nextAnchor) {
+          const nextOffset = nextAnchor.getBoundingClientRect().top - area.getBoundingClientRect().top;
+          area.scrollTop += nextOffset - anchorOffset;
+        }
+      } else {
+        area.scrollTop = 0;
+        area.scrollLeft = 0;
+      }
     }
-  } else {
-    area.scrollTop = 0;
-    area.scrollLeft = 0;
+    lastAreaWidth = area.clientWidth;
+    lastAreaHeight = area.clientHeight;
+    updatePageHint();
+    updateAnswerHint();
+  } finally {
+    if (sequence === renderSequence) {
+      buildingStack = false;
+      scheduleCurrentPageUpdate();
+    }
   }
-  lastAreaWidth = area.clientWidth;
-  updatePageNavigation();
-  updateAnswerHint();
-  scheduleCurrentPageUpdate();
 }
 
-function updatePageNavigation() {
+function updatePageHint() {
   const total = pdfDoc?.numPages || 1;
-  document.getElementById('pgCount').textContent = `${pageNum} de ${total}`;
-  document.getElementById('pgPrev').disabled = pageNum <= 1;
-  document.getElementById('pgNext').disabled = !pdfDoc || pageNum >= pdfDoc.numPages;
-  document.querySelector('.pdfNav').hidden = total <= 1;
-  document.getElementById('scrollHint').hidden = total <= 1;
-  document.getElementById('zoomOut').disabled = zoomFactor <= MIN_ZOOM;
-  document.getElementById('zoomIn').disabled = zoomFactor >= MAX_ZOOM;
-}
-
-async function setZoom(value) {
-  zoomFactor = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(value * 20) / 20));
-  await buildPageStack({ preservePage: true });
+  const presentation = isPresentation();
+  document.getElementById('scrollHint').hidden = presentation || total <= 1;
+  window.dispatchEvent(new CustomEvent('reader-page-change', { detail: { page: pageNum, total, presentation } }));
 }
 
 async function loadPdf(url) {
   pdfDoc = await pdfjsLib.getDocument({ url, isEvalSupported: false }).promise;
   pageNum = 1;
   await buildPageStack();
+  document.getElementById('fullScreen').disabled = false;
 }
 
 function wrapText(context, text, width) {
@@ -909,11 +1310,11 @@ function drawAnswer(context, field, text, width, height) {
   const y = field.y * height;
   const boxWidth = field.w * width;
   const boxHeight = field.h * height;
-  if (field.kind === 'check') {
+  if (field.kind === 'check' || field.kind === 'radio') {
     if (text !== '1') return;
     context.save();
     context.fillStyle = '#0A6BCE';
-    context.font = `800 ${Math.max(14, boxHeight * 1.1)}px -apple-system, Arial, sans-serif`;
+    context.font = `800 ${Math.max(1, Math.min(18, boxHeight * 0.8))}px -apple-system, Arial, sans-serif`;
     context.textBaseline = 'middle';
     context.textAlign = 'center';
     context.fillText('✓', x + boxWidth / 2, y + boxHeight / 2);
@@ -921,17 +1322,18 @@ function drawAnswer(context, field, text, width, height) {
     return;
   }
   if (!text) return;
-  const fontSize = Math.max(11, Math.min(19, boxHeight * 0.58));
-  const lineHeight = fontSize * 1.18;
+  const lineHeight = Math.min(boxHeight, height * (field.textScale || 0.026));
+  const fontSize = Math.max(1, Math.min(field.textScale ? Infinity : 22, lineHeight * 0.72));
+  const topPadding = field.kind !== 'line' && field.h > 0.055 ? 0 : Math.max(0, boxHeight - lineHeight - 1);
   context.save();
   context.beginPath();
-  context.rect(x, y, boxWidth, Math.max(boxHeight, lineHeight));
+  context.rect(x, y, boxWidth, boxHeight);
   context.clip();
-  context.fillStyle = '#17365D';
+  context.fillStyle = field.color || '#17365D';
   context.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif`;
-  context.textBaseline = 'top';
+  context.textBaseline = 'alphabetic';
   const lines = wrapText(context, text, Math.max(20, boxWidth - 4));
-  lines.forEach((line, index) => context.fillText(line, x + 2, y + 1 + index * lineHeight));
+  lines.forEach((line, index) => context.fillText(line, x + 2, y + topPadding + (index + 0.82) * lineHeight));
   context.restore();
 }
 
@@ -939,23 +1341,23 @@ async function saveAnsweredPdf() {
   const button = document.getElementById('savePdf');
   if (!pdfDoc || button.dataset.busy) return;
   button.dataset.busy = '1';
-  const label = button.textContent;
-  button.textContent = 'Preparando...';
+  setReaderLabel(button, 'Preparando...', 'Preparing...');
   try {
     const { jsPDF } = window.jspdf;
     let output = null;
     for (let number = 1; number <= pdfDoc.numPages; number += 1) {
-      button.textContent = `Página ${number} de ${pdfDoc.numPages}`;
+      setReaderLabel(button, `Página ${number} de ${pdfDoc.numPages}`, `Page ${number} of ${pdfDoc.numPages}`);
       const page = await pdfDoc.getPage(number);
-      const sourceViewport = page.getViewport({ scale: 1 });
-      const renderViewport = page.getViewport({ scale: 1.7 });
+      const rotation = (Number(page.rotate || 0) + Number(pageRotations[String(number)] || 0)) % 360;
+      const sourceViewport = page.getViewport({ scale: 1, rotation });
+      const renderViewport = page.getViewport({ scale: 1.7, rotation });
       const canvas = document.createElement('canvas');
       canvas.width = Math.ceil(renderViewport.width);
       canvas.height = Math.ceil(renderViewport.height);
       const context = canvas.getContext('2d');
       await page.render({ canvasContext: context, viewport: renderViewport }).promise;
       for (const [id, field] of Object.entries(answerState.fields)) {
-        if (field.page !== number || !answerState.values[id]) continue;
+        if (field.page !== number || field.aliasFor || !answerState.values[id]) continue;
         drawAnswer(context, field, answerState.values[id], renderViewport.width, renderViewport.height);
       }
       const orientation = sourceViewport.width > sourceViewport.height ? 'landscape' : 'portrait';
@@ -968,7 +1370,7 @@ async function saveAnsweredPdf() {
     output.save(`${lesson.title} - contestado.pdf`);
   } finally {
     delete button.dataset.busy;
-    button.textContent = label;
+    setReaderLabel(button, 'Guardar PDF', 'Save PDF');
   }
 }
 
@@ -989,7 +1391,7 @@ function clearOrRestoreAnswers() {
     answerState = clearBackup;
     clearBackup = null;
     clearTimeout(clearTimer);
-    button.textContent = 'Borrar respuestas';
+    setReaderLabel(button, 'Borrar respuestas', 'Clear answers');
     saveAnswers();
     syncVisibleAnswers();
     return;
@@ -998,17 +1400,52 @@ function clearOrRestoreAnswers() {
   clearBackup = structuredClone(answerState);
   answerState.values = {};
   saveAnswers();
-  button.textContent = 'Deshacer borrado';
+  setReaderLabel(button, 'Deshacer borrado', 'Undo clear');
   syncVisibleAnswers();
   clearTimer = setTimeout(() => {
     clearBackup = null;
-    button.textContent = 'Borrar respuestas';
+    setReaderLabel(button, 'Borrar respuestas', 'Clear answers');
   }, 10000);
+}
+
+function scopedUrl(path, values = {}) {
+  const query = new URLSearchParams(values);
+  if (sharedMode) query.set('s', shareId);
+  return `${path}${query.toString() ? `?${query}` : ''}`;
+}
+
+function showUnavailable(message = ['Este archivo no está disponible.', 'This file is unavailable.']) {
+  course = null;
+  lesson = null;
+  lessons = [];
+  pdfDoc = null;
+  pageMetrics = [];
+  renderSequence += 1;
+  cancelRenderTasks();
+  renderObserver?.disconnect();
+  setReaderLabel(document.querySelector('title'), 'No disponible', 'Unavailable');
+  setReaderLabel(document.getElementById('title'), 'Lección no disponible', 'Lesson unavailable');
+  document.getElementById('count').textContent = '';
+  setReaderLabel(document.getElementById('answerHint'), '', '');
+  for (const id of ['prev', 'next', 'fullScreen', 'clearAnswers', 'savePdf', 'shareLesson']) {
+    document.getElementById(id).disabled = true;
+  }
+  document.getElementById('prev').style.visibility = 'hidden';
+  document.getElementById('next').style.visibility = 'hidden';
+  document.getElementById('scrollHint').hidden = true;
+  const original = document.getElementById('downloadOriginal');
+  original.hidden = true;
+  original.removeAttribute('href');
+  if (sharedMode) setReaderLabel(document.getElementById('back'), 'Selección', 'Selection');
+  const notice = document.createElement('p');
+  notice.className = 'emptyMsg';
+  setReaderLabel(notice, ...message);
+  document.getElementById('pdfBox').replaceChildren(notice);
 }
 
 async function init() {
   const [catalogResponse, fieldsResponse, versesResponse] = await Promise.all([
-    fetch('/api/catalog', { cache: 'no-store' }),
+    fetch(scopedUrl('/api/catalog'), { cache: 'no-store' }),
     fetch('/assets/answer-fields.json', { cache: 'no-store' }).catch(() => null),
     fetch('/assets/verse-fields.json', { cache: 'no-store' }).catch(() => null)
   ]);
@@ -1017,52 +1454,81 @@ async function init() {
   if (fieldsResponse?.ok) fieldCatalog = await fieldsResponse.json();
   if (versesResponse?.ok) verseCatalog = await versesResponse.json();
   course = data.courses.find(item => item.id === cid);
-  if (!course) { location.href = 'index.html'; return; }
-  lessons = course.lessons.filter(item => item.type === 'pdf');
-  lesson = lessons.find(item => item.id === lessonParam || item.legacyNumber === lessonParam.padStart(2, '0'));
+  if (!course) {
+    if (sharedMode) showUnavailable();
+    else location.href = 'index.html';
+    return;
+  }
+  lessons = course.lessons.filter(item => item.type === 'pdf' || window.LessonCompanions?.get(cid, item));
+  lesson = lessons.find(item => item.id === lessonParam || (!sharedMode && item.legacyNumber === lessonParam.padStart(2, '0')));
   if (!lesson) {
-    document.title = 'No disponible';
-    document.getElementById('title').textContent = 'Lección no disponible';
-    const message = document.createElement('p');
-    message.className = 'emptyMsg';
-    message.textContent = 'Este archivo no está disponible.';
-    document.getElementById('pdfBox').replaceChildren(message);
+    showUnavailable();
     return;
   }
   const index = lessons.indexOf(lesson);
   document.title = `${course.name} · ${lesson.title}`;
   document.getElementById('title').textContent = `${course.name} · ${lesson.title}`;
+  const shareButton = document.getElementById('shareLesson');
+  shareButton.onclick = () => window.CourseShare.shareSelection({
+    selection: [{ courseId: course.id, lessonIds: [lesson.id] }],
+    title: lesson.title,
+    text: `${lesson.title} · ${course.name}`
+  });
+  shareButton.disabled = false;
+  if (sharedMode) setReaderLabel(document.getElementById('back'), 'Curso', 'Course');
   document.getElementById('count').textContent = soloMode ? '' : `${index + 1} / ${lessons.length}`;
+  document.getElementById('prev').disabled = index <= 0 || soloMode;
+  document.getElementById('next').disabled = index >= lessons.length - 1 || soloMode;
   document.getElementById('prev').style.visibility = index <= 0 || soloMode ? 'hidden' : 'visible';
   document.getElementById('next').style.visibility = index >= lessons.length - 1 || soloMode ? 'hidden' : 'visible';
+  const original = document.getElementById('downloadOriginal');
+  original.href = lesson.downloadUrl || lesson.url;
+  original.setAttribute('download', lesson.originalName || `${lesson.title}.pdf`);
+  original.hidden = false;
   loadAnswers();
-  await loadPdf(lesson.url);
+  loadRotations();
+  const companion = window.LessonCompanions?.get(cid, lesson);
+  if (companion) setReaderLabel(original, 'PowerPoint original', 'Original PowerPoint');
+  else setReaderLabel(original, 'PDF original', 'Original PDF');
+  await loadPdf(companion?.pdfUrl || lesson.url);
+  document.getElementById('clearAnswers').disabled = false;
+  document.getElementById('savePdf').disabled = false;
 }
 
-document.getElementById('back').onclick = () => { location.href = `curso.html?c=${encodeURIComponent(cid)}`; };
+for (const id of ['prev', 'next', 'clearAnswers', 'savePdf']) document.getElementById(id).disabled = true;
+setReaderLabel(document.getElementById('back'), sharedMode ? 'Selección' : 'Cursos', sharedMode ? 'Selection' : 'Courses');
+setReaderLabel(document.getElementById('clearAnswers'), 'Borrar respuestas', 'Clear answers');
+setReaderLabel(document.getElementById('savePdf'), 'Guardar PDF', 'Save PDF');
+document.getElementById('back').onclick = () => {
+  location.href = sharedMode && !course
+    ? scopedUrl('index.html')
+    : scopedUrl('curso.html', { c: course?.id || cid });
+};
 document.getElementById('prev').onclick = () => {
+  if (!lesson || soloMode) return;
   const index = lessons.indexOf(lesson) - 1;
-  if (index >= 0) location.href = `leer.html?c=${encodeURIComponent(cid)}&l=${encodeURIComponent(lessons[index].legacyNumber || lessons[index].id)}`;
+  if (index >= 0) location.href = scopedUrl('leer.html', { c: cid, l: sharedMode ? lessons[index].id : lessons[index].legacyNumber || lessons[index].id });
 };
 document.getElementById('next').onclick = () => {
+  if (!lesson || soloMode) return;
   const index = lessons.indexOf(lesson) + 1;
-  if (index < lessons.length) location.href = `leer.html?c=${encodeURIComponent(cid)}&l=${encodeURIComponent(lessons[index].legacyNumber || lessons[index].id)}`;
+  if (index < lessons.length) location.href = scopedUrl('leer.html', { c: cid, l: sharedMode ? lessons[index].id : lessons[index].legacyNumber || lessons[index].id });
 };
-document.getElementById('pgPrev').onclick = () => scrollToPage(pageNum - 1);
-document.getElementById('pgNext').onclick = () => scrollToPage(pageNum + 1);
-document.getElementById('zoomOut').onclick = () => setZoom(zoomFactor - 0.2).catch(() => {});
-document.getElementById('zoomIn').onclick = () => setZoom(zoomFactor + 0.2).catch(() => {});
-document.getElementById('zoomFit').onclick = () => setZoom(1).catch(() => {});
 document.getElementById('clearAnswers').onclick = clearOrRestoreAnswers;
 document.getElementById('savePdf').onclick = () => saveAnsweredPdf().catch(() => {
-  document.getElementById('answerHint').textContent = 'No se pudo crear el PDF. Intenta otra vez.';
+  setReaderLabel(document.getElementById('answerHint'), 'No se pudo crear el PDF. Intenta otra vez.', 'The PDF could not be created. Try again.');
 });
-document.getElementById('pdfArea').addEventListener('wheel', event => {
-  if (!event.ctrlKey) return;
-  event.preventDefault();
-  setZoom(zoomFactor + (event.deltaY < 0 ? 0.15 : -0.15)).catch(() => {});
-}, { passive: false });
 document.getElementById('pdfArea').addEventListener('scroll', scheduleCurrentPageUpdate, { passive: true });
+window.addEventListener('reader-view-change', () => {
+  if (isPresentation()) showPresentationPage();
+  buildPageStack({ preservePage: true, preserveOffset: false }).catch(() => {});
+});
+window.addEventListener('reader-page-request', event => {
+  if (!isPresentation() || !pdfDoc) return;
+  const { page, delta } = event.detail || {};
+  if (Number.isInteger(page)) scrollToPage(page, 'auto');
+  else if (delta === -1 || delta === 1) scrollToPage(pageNum + delta, 'auto');
+});
 
 let resizeTimer = null;
 window.addEventListener('resize', () => {
@@ -1070,14 +1536,17 @@ window.addEventListener('resize', () => {
   resizeTimer = setTimeout(() => {
     const area = document.getElementById('pdfArea');
     if (document.activeElement?.classList.contains('answerField')) return;
-    if (Math.abs(area.clientWidth - lastAreaWidth) > 24) buildPageStack({ preservePage: true }).catch(() => {});
+    if (Math.abs(area.clientWidth - lastAreaWidth) > 24 || (isPresentation() && Math.abs(area.clientHeight - lastAreaHeight) > 4)) buildPageStack({ preservePage: true }).catch(() => {});
   }, 180);
 });
 
+if (params.get('diagnostico') === 'toque') {
+  import('./reader-touch-diagnostic.js').then(({ default: start }) => start()).catch(() => {});
+}
+
 init().catch(error => {
   console.error('No se pudo cargar el lector.', error?.stack || error);
-  const message = document.createElement('p');
-  message.className = 'emptyMsg';
-  message.textContent = 'No se pudo cargar la lección. Intenta recargar la página.';
-  document.getElementById('pdfBox').replaceChildren(message);
+  showUnavailable(sharedMode
+    ? ['La selección compartida o esta lección no está disponible.', 'The shared selection or this lesson is unavailable.']
+    : ['No se pudo cargar la lección. Intenta recargar la página.', 'The lesson could not load. Try reloading the page.']);
 });

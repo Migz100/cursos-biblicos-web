@@ -23,12 +23,13 @@ function manifest(url, type = 'pptx', pathname = 'cms/preview/test/assets/lesson
   };
 }
 
-test('presentation viewer URLs come only from a catalog-owned public Blob asset', () => {
+test('presentation downloads come only from a catalog-owned public Blob asset and preview fails closed', () => {
   const asset = 'https://store.public.blob.vercel-storage.com/cms/preview/test/assets/lesson.pptx';
   const result = resolvePresentationLesson(manifest(asset), 'course-one', 'lesson-one', 'cms/preview/test');
   assert.equal(result.lesson.id, 'lesson-one');
-  assert.match(result.viewerUrl, /^https:\/\/view\.officeapps\.live\.com\/op\/embed\.aspx\?src=/);
-  assert.equal(decodeURIComponent(new URL(result.viewerUrl).searchParams.get('src')), asset);
+  assert.equal(result.lesson.downloadUrl, `${asset}?download=1`);
+  assert.equal(result.viewerAvailable, false);
+  assert.equal('viewerUrl' in result, false);
 });
 
 test('forged, missing, and non-PowerPoint viewer requests are rejected', () => {
@@ -44,11 +45,11 @@ test('forged, missing, and non-PowerPoint viewer requests are rejected', () => {
   assert.throws(() => trustedBlobUrl('https://store.public.blob.vercel-storage.com.attacker.invalid/lesson.pptx'), error => error.code === 'UNTRUSTED_PRESENTATION');
 });
 
-test('CSP allows only the required upload and presentation service origins', () => {
+test('CSP allows required upload origins and blocks presentation frames', () => {
   const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'vercel.json'), 'utf8'));
   const csp = config.headers.flatMap(rule => rule.headers || []).find(header => header.key === 'Content-Security-Policy').value;
   assert.match(csp, /connect-src [^;]*https:\/\/vercel\.com(?:[ ;])/);
-  assert.match(csp, /frame-src https:\/\/view\.officeapps\.live\.com;/);
+  assert.match(csp, /frame-src 'none';/);
   assert.doesNotMatch(csp, /connect-src [^;]*https:\/\/\*(?:[ ;])/);
   assert.doesNotMatch(csp, /frame-src [^;]*https:\/\/\*(?:[ ;])/);
 });

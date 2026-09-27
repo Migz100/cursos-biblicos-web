@@ -2,29 +2,51 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<script src="/posthog.js" defer></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" crossorigin="use-credentials">
+<link rel="apple-touch-icon" href="/assets/app-icon-180.png">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#F5F5F7">
-<title>Curso</title>
+<!--seo:start-->
+<title>Curso bíblico en español | Cursos Bíblicos</title>
+<meta name="description" content="Lee las lecciones de tu curso bíblico en español y descarga sus materiales.">
+<meta name="robots" content="noindex, follow">
+<!--seo:end-->
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="/assets/app-icon-192.png" sizes="192x192">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="ui.css">
+<link rel="stylesheet" href="share.css">
 </head>
 <body>
-<nav><div class="inner">
-  <a class="back" href="index.html">Inicio</a>
-  <span class="brand" style="flex:1;text-align:center" id="title"></span>
-  <a class="manageLink" href="admin/">Administrar</a>
+<nav class="courseNav"><div class="inner">
+  <a class="back">Inicio</a>
+  <span class="brand" id="title"></span>
 </div></nav>
 <main>
   <div class="courseCover" id="courseCover" hidden role="img"></div>
   <h1 class="courseTitle" id="courseTitle"></h1>
+  <p class="archiveNote" id="courseSummary"></p>
   <div class="courseHead">
-    <a class="dlBtn" id="dlCourse" hidden></a>
-    <a class="dlBtn ghost" id="dlPpt" hidden>Descargar originales iniciales (PPTX)</a>
-    <p class="archiveNote" id="courseArchiveNote" hidden>Este ZIP conserva la versión inicial. Los cambios nuevos se descargan por lección.</p>
+    <div class="coursePrimaryActions">
+      <button class="dlBtn shareTrigger" id="shareCourse" type="button" disabled>Compartir curso</button>
+      <button class="uiInstallButton" type="button" data-ui-install data-ui-install-home>Añadir a inicio (instrucciones)</button>
+    </div>
+    <div class="courseDownloads">
+      <a class="dlBtn courseArchive" id="dlCourse" hidden></a>
+    </div>
+    <p class="archiveNote" id="courseArchiveNote" hidden data-ui-es="Este ZIP conserva la versión inicial. Los cambios nuevos se descargan por lección." data-ui-en="This ZIP contains the initial version. Download updated files from each lesson.">Este ZIP conserva la versión inicial. Los cambios nuevos se descargan por lección.</p>
   </div>
+  <p class="sharedNotice" id="sharedNotice" hidden data-ui-es="Este enlace incluye solo las lecciones que eligieron compartir contigo." data-ui-en="This link includes only the lessons selected to share with you.">Este enlace incluye solo las lecciones que eligieron compartir contigo.</p>
   <div class="lessonGroup" id="list"></div>
 </main>
+<script src="lesson-companions.js"></script>
+<script src="seo.js"></script>
+<script src="ui.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="share.js"></script>
 <script src="course.js"></script>
 </body>
 </html>

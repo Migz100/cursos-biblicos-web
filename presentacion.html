@@ -2,27 +2,39 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<script src="/posthog.js" defer></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" crossorigin="use-credentials">
+<link rel="apple-touch-icon" href="/assets/app-icon-180.png">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#FFFFFF">
-<title>Presentación</title>
+<!--seo:start-->
+<title>Presentación bíblica en español | Cursos Bíblicos</title>
+<meta name="description" content="Abre esta presentación bíblica en español o descarga el archivo original para estudiar.">
+<meta name="robots" content="noindex, follow">
+<!--seo:end-->
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="/assets/app-icon-192.png" sizes="192x192">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="ui.css">
+<link rel="stylesheet" href="share.css">
 </head>
 <body>
 <div class="presentationViewer">
   <div class="readerNav presentationNav">
-    <a class="navBtn ghost presentationBack" id="back" href="index.html">Curso</a>
+    <a class="navBtn ghost presentationBack" id="back">Curso</a>
     <div class="title" id="title">Cargando presentación...</div>
-    <button class="navBtn" id="fullScreen" type="button">Pantalla completa</button>
-    <a class="navBtn ghost" id="openViewer" target="_blank" rel="noopener" hidden>Abrir</a>
+    <button class="navBtn" id="fullScreen" type="button" hidden data-ui-es="Pantalla completa" data-ui-en="Full screen">Pantalla completa</button>
+    <a class="navBtn ghost" id="openViewer" target="_blank" rel="noopener" hidden data-ui-es="Abrir" data-ui-en="Open">Abrir</a>
     <button class="navBtn ghost" id="download" type="button" disabled>Descargar</button>
+    <button class="navBtn ghost shareTrigger" id="shareLesson" type="button" disabled data-ui-es="Compartir" data-ui-en="Share">Compartir</button>
   </div>
   <div class="presentationStage" id="stage">
-    <div class="presentationStatus" id="status" role="status">Preparando la presentación...</div>
+    <div class="presentationStatus" id="status" role="status" data-ui-es="Preparando la presentación..." data-ui-en="Preparing the presentation...">Preparando la presentación...</div>
     <iframe
       id="presentationFrame"
-      title="Visor de presentación"
+      title="Visor de presentación" data-ui-es-title="Visor de presentación" data-ui-en-title="Presentation viewer"
       referrerpolicy="no-referrer"
       sandbox="allow-downloads allow-forms allow-same-origin allow-scripts"
       allow="fullscreen"
@@ -30,10 +42,14 @@
       hidden></iframe>
     <div class="presentationFallback" id="fallback" hidden>
       <strong>No se pudo mostrar la presentación.</strong>
-      <span>Puedes abrir el visor en otra pestaña o descargar el archivo.</span>
+      <span>Puedes descargar el archivo original para verlo completo.</span>
     </div>
   </div>
 </div>
+<script src="lesson-companions.js"></script>
+<script src="ui.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="share.js"></script>
 <script src="presentation.js"></script>
 </body>
 </html>

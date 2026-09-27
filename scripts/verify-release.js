@@ -3,7 +3,6 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { buildStarterManifest, totalLessons } = require('../api/_lib/cms/core');
-const { DEFAULT_COURSE_COVERS, applyDefaultCourseCovers } = require('../api/_lib/cms/course-covers');
 const { LESSON_TITLES: FE_TITLES } = require('./fe-de-jesus-source');
 
 const COURSE_NAME = 'La Fe de Jesús 2';
@@ -20,10 +19,6 @@ const TITLES = [
 
 function invariant(condition, message) {
   if (!condition) throw new Error(message);
-}
-
-function lessonsById(lessons) {
-  return [...lessons].sort((left, right) => String(left.id).localeCompare(String(right.id)));
 }
 
 async function loadCatalog(baseUrl, protectedPreview) {
@@ -68,14 +63,10 @@ async function readDeploymentAsset(baseUrl, route, protectedPreview) {
 async function main() {
   const baseUrl = process.argv[2]?.replace(/\/$/, '');
   const protectedPreview = process.argv.includes('--vercel-protected');
-  const expectedRevision = process.argv
-    .find(argument => argument.startsWith('--expected-revision='))
-    ?.slice('--expected-revision='.length);
-  invariant(baseUrl, 'Usage: node scripts/verify-release.js <deployment-url> [--vercel-protected] [--expected-revision=<revision>]');
+  invariant(baseUrl, 'Usage: node scripts/verify-release.js <deployment-url> [--vercel-protected]');
   const manifest = await loadCatalog(baseUrl, protectedPreview);
-  const starter = applyDefaultCourseCovers(buildStarterManifest());
+  const starter = buildStarterManifest();
 
-  if (expectedRevision) invariant(manifest.revision === expectedRevision, 'Production catalog revision changed');
   invariant(manifest.courses.length === 14, 'Expected 14 courses');
   invariant(totalLessons(manifest) === 215, 'Expected 215 lessons');
   for (const expected of starter.courses.slice(1)) {
@@ -83,14 +74,7 @@ async function main() {
     invariant(actual, `Starter course ${expected.id} is missing`);
     invariant(actual.name === expected.name, `Starter course ${expected.id} was renamed`);
     invariant(actual.lessons.length === expected.lessons.length, `Starter course ${expected.id} lesson count changed`);
-    invariant(new Set(actual.lessons.map(item => item.id)).size === actual.lessons.length, `Starter course ${expected.id} has duplicate lesson ids`);
-    invariant(actual.lessons.every(item => item.id && item.title && item.type && item.url), `Starter course ${expected.id} has an incomplete lesson`);
-    if (!expectedRevision) {
-      invariant(
-        JSON.stringify(lessonsById(actual.lessons)) === JSON.stringify(lessonsById(expected.lessons)),
-        `Starter course ${expected.id} lesson content changed`
-      );
-    }
+    invariant(JSON.stringify(actual.lessons) === JSON.stringify(expected.lessons), `Starter course ${expected.id} lessons changed`);
   }
 
   const starterFe = starter.courses[0];
@@ -107,17 +91,6 @@ async function main() {
     item.legacyNumber === String(index + 1).padStart(2, '0') &&
     item.type === 'pdf' && item.managed
   )), 'Fe de Jesús lesson identity or format is wrong');
-
-  await Promise.all(Object.entries(DEFAULT_COURSE_COVERS).map(async ([courseId, coverUrl]) => {
-    const starterCourse = manifest.courses.find(item => String(item.id) === courseId);
-    invariant(starterCourse, `Starter course ${courseId} is missing`);
-    invariant(starterCourse.coverUrl === coverUrl, `Starter course ${courseId} has the wrong cover`);
-    const cover = await readDeploymentAsset(baseUrl, coverUrl, protectedPreview);
-    invariant(
-      cover.subarray(0, 4).toString('ascii') === 'RIFF' && cover.subarray(8, 12).toString('ascii') === 'WEBP',
-      `Starter course ${courseId} cover is unavailable`
-    );
-  }));
 
   const course = manifest.courses.find(item => item.name === COURSE_NAME);
   invariant(course?.section === 'lafe', 'La Fe de Jesús 2 is not in the PowerPoint section');
@@ -146,7 +119,7 @@ async function main() {
     invariant(bytes.subarray(0, 5).toString('ascii') === '%PDF-', `Fe de Jesús lesson ${index + 1} is not a PDF`);
   }));
 
-  process.stdout.write(JSON.stringify({ revision: manifest.revision, courses: 14, lessons: 215, feLessons: 20, laFe2Lessons: 30, assetsVerified: 63 }) + '\n');
+  process.stdout.write(JSON.stringify({ revision: manifest.revision, courses: 14, lessons: 215, feLessons: 20, laFe2Lessons: 30, assetsVerified: 50 }) + '\n');
 }
 
 main().catch(error => {

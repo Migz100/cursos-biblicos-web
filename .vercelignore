@@ -3,5 +3,11 @@ test/
 /upload*.js
 .code-host/
 .code-host.env
+.code-host*
 AGENTS.md
 CODE_CONTEXT.md
+/admin/
+/edit/
+/api/manage/
+/api/code/
+/api/_lib/code/

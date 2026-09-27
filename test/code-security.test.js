@@ -19,12 +19,14 @@ process.env.CODE_HOST_TOKEN_HASH = sha256(hostKey);
 process.env.CODE_RELAY_SECRET = 'test-relay-secret-with-at-least-thirty-two-characters';
 process.env.CMS_NAMESPACE_OVERRIDE = 'test/code-security';
 
-test('editor access is open to every device (Miguel decision 2026-08-27)', () => {
-  assert.doesNotThrow(() => requirePairingKey({ headers: {} }));
-  assert.doesNotThrow(() => requireEditor({ headers: {} }));
-  assert.doesNotThrow(() => requireEditor({ headers: { cookie: 'cb_editor=bad' } }));
+test('editor access requires the pairing key and signed device cookie', () => {
+  assert.throws(() => requirePairingKey({ headers: {} }), error => error.code === 'EDITOR_ACCESS_DENIED');
+  assert.throws(() => requireEditor({ headers: {} }), error => error.code === 'EDITOR_ACCESS_DENIED');
+  assert.throws(() => requireEditor({ headers: { cookie: 'cb_editor=bad' } }), error => error.code === 'EDITOR_ACCESS_DENIED');
+  assert.doesNotThrow(() => requirePairingKey({ headers: { 'x-code-pairing': editorKey } }));
   const token = newEditorSessionToken();
   assert.equal(verifyEditorSessionToken(token), true);
+  assert.doesNotThrow(() => requireEditor({ headers: { cookie: `cb_editor=${token}` } }));
   assert.match(editorSessionCookie(token), /HttpOnly/);
   assert.match(editorSessionCookie(token), /SameSite=Strict/);
 });

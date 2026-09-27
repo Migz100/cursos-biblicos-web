@@ -2,32 +2,73 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="google-site-verification" content="ANi1RRQ9n00ZAfRqhP9ekiCIcALndQGfpeRPxnDqMlw">
+<script src="/posthog.js" defer></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" crossorigin="use-credentials">
+<link rel="apple-touch-icon" href="/assets/app-icon-180.png">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#F5F5F7">
-<title>Cursos Bíblicos</title>
-<meta name="description" content="Doce cursos de estudio bíblico: Fe de Jesús, La Gran Esperanza, Apocalipsis, Daniel y más. Lecciones en PDF.">
-<link rel="stylesheet" href="styles.css">
+<!--seo:start-->
+<title>Cursos bíblicos gratis en español | Cursos Bíblicos</title>
+<meta name="description" content="Estudia la Biblia a tu ritmo con cursos bíblicos gratis en español. Lee las lecciones en línea, descarga los materiales y comparte tu selección.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://cursosbiblicos.app/">
+<!--seo:end-->
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="/assets/app-icon-192.png" sizes="192x192">
+<link rel="stylesheet" href="home.css">
+<link rel="stylesheet" href="ui.css">
+<link rel="stylesheet" href="share.css">
 </head>
 <body>
-<nav><div class="inner"><span class="brand" id="brand">Cursos Bíblicos</span><span class="spacer"></span><a class="manageLink" href="admin/">Administrar</a></div></nav>
 <main>
   <section class="homeHero" aria-labelledby="homeTitle">
     <img class="homeHeroImage" src="assets/course-covers/fe-de-jesus.webp" alt="" width="1440" height="1080" fetchpriority="high">
-    <h1 id="homeTitle">Estudia la Biblia<br>a tu ritmo</h1>
+    <h1 id="homeTitle">Cursos Bíblicos</h1>
   </section>
   <div class="homeControls">
-    <label class="srOnly" for="search">Buscar curso</label>
+    <label class="srOnly" for="search" data-ui-es="Buscar curso" data-ui-en="Search courses">Buscar curso</label>
     <div class="searchWrap">
       <svg class="glass" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="5" stroke="#1D1D1F" stroke-width="1.6"/><line x1="10.8" y1="10.8" x2="15" y2="15" stroke="#1D1D1F" stroke-width="1.6" stroke-linecap="round"/></svg>
-      <input type="search" id="search" placeholder="Buscar curso" autocomplete="off">
+      <input type="search" id="search" placeholder="Buscar curso" data-ui-es-placeholder="Buscar curso" data-ui-en-placeholder="Search courses" autocomplete="off">
     </div>
-    <a class="catalogDownload" id="dlBtn" download hidden>Descargar catálogo original (ZIP)</a>
+    <div class="catalogActions">
+      <div class="catalogPrimaryActions">
+        <button class="shareTrigger" id="shareCatalog" type="button" disabled data-ui-es="Compartir cursos" data-ui-en="Share courses">Compartir cursos</button>
+        <button class="uiInstallButton" type="button" data-ui-install data-ui-install-home>Añadir a inicio (instrucciones)</button>
+      </div>
+      <a class="catalogDownload catalogArchive" id="dlBtn" aria-describedby="downloadEstimate" download hidden data-ui-es="Descargar todos los cursos" data-ui-en="Download all courses">Descargar todos los cursos</a>
+      <p class="catalogDownloadInfo" id="downloadEstimate" hidden></p>
+      <p class="catalogDownloadStatus" id="downloadStatus" role="status" aria-live="polite" hidden></p>
+    </div>
+    <p class="sharedNotice" id="sharedNotice" hidden data-ui-es="Estas son las lecciones que eligieron compartir contigo." data-ui-en="These are the lessons selected to share with you.">Estas son las lecciones que eligieron compartir contigo.</p>
   </div>
   <div id="sections"></div>
   <div class="empty" id="empty" style="display:none">Ningún curso coincide con "0".</div>
+  <section class="homeControls seoIntro" aria-labelledby="studyIntro">
+    <h2 id="studyIntro" data-ui-es="Cursos para estudiar la Biblia a tu ritmo" data-ui-en="Bible courses to study at your own pace">Cursos para estudiar la Biblia a tu ritmo</h2>
+    <p data-ui-es="Elige un curso, abre una lección y estudia desde tu teléfono, tableta o computadora. Los materiales originales están en español." data-ui-en="Choose a course, open a lesson and study on your phone, tablet or computer. The original materials are in Spanish.">Elige un curso, abre una lección y estudia desde tu teléfono, tableta o computadora. Los materiales originales están en español.</p>
+    <details><summary data-ui-es="¿Los cursos son gratis?" data-ui-en="Are the courses free?">¿Los cursos son gratis?</summary><p data-ui-es="Sí. Puedes leer las lecciones y descargar los materiales sin crear una cuenta." data-ui-en="Yes. Read lessons and download materials without creating an account.">Sí. Puedes leer las lecciones y descargar los materiales sin crear una cuenta.</p></details>
+    <details><summary data-ui-es="¿Puedo compartir solo algunas lecciones?" data-ui-en="Can I share only certain lessons?">¿Puedo compartir solo algunas lecciones?</summary><p data-ui-es="Sí. Toca Compartir cursos, marca las lecciones y crea un enlace o código QR con tu selección." data-ui-en="Yes. Tap Share courses, select the lessons and create a link or QR code for your selection.">Sí. Toca Compartir cursos, marca las lecciones y crea un enlace o código QR con tu selección.</p></details>
+    <details><summary data-ui-es="¿Puedo guardar mis respuestas?" data-ui-en="Can I save my answers?">¿Puedo guardar mis respuestas?</summary><p data-ui-es="En las lecciones con campos para responder, escribe en los recuadros. Las respuestas se guardan en este navegador y puedes descargar el PDF con tus respuestas." data-ui-en="In lessons with answer fields, type in the boxes. Your answers are saved in this browser, and you can download the PDF with your answers.">En las lecciones con campos para responder, escribe en los recuadros. Las respuestas se guardan en este navegador y puedes descargar el PDF con tus respuestas.</p></details>
+  </section>
+  <section class="homeHelp" aria-labelledby="helpTitle">
+    <div class="homeHelpIntro">
+      <h2 id="helpTitle" data-ui-es="¿Necesitas ayuda?" data-ui-en="Need help?">¿Necesitas ayuda?</h2>
+      <p class="homeHelpAvailability" data-ui-es="Disponible los sábados por la tarde." data-ui-en="Available Saturday afternoons.">Disponible los sábados por la tarde.</p>
+    </div>
+    <a class="homeHelpCall" href="tel:+15099327206">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.96.35 1.9.69 2.79a2 2 0 0 1-.45 2.11L8.09 9.89a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.89.34 1.83.57 2.79.69A2 2 0 0 1 22 16.92z"/></svg>
+      <span><span data-ui-es="Llamar al" data-ui-en="Call">Llamar al</span> <span class="homeHelpNumber">(509) 932-7206</span></span>
+    </a>
+  </section>
 </main>
+<script src="seo.js"></script>
+<script src="ui.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="share.js"></script>
 <script src="site.js"></script>
 </body>
 </html>

@@ -1,0 +1,50 @@
+[
+  {
+    "file": "safari-add-home-en.png",
+    "source": "https://support.apple.com/guide/iphone/bookmark-a-website-iph42ab2f3a7/18.0/ios/18.0",
+    "image": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/85ac90c223ce4cb6a155dfce8078f17b.png"
+  },
+  {
+    "file": "safari-classic.png",
+    "source": "https://support.apple.com/guide/iphone/browse-the-web-iph1fbef4daa/18.0/ios/18.0",
+    "image": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/65324ce0d091c4874eed6086d89d7cc8.png"
+  },
+  {
+    "file": "safari-add-home-es.png",
+    "source": "https://support.apple.com/es-us/guide/iphone/iph42ab2f3a7/18.0/ios/18.0",
+    "image": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/es_419/df80112c72d3a776b846c1cd67c2f3d3.png"
+  },
+  {
+    "file": "safari-view-more-en.png",
+    "source": "https://support.apple.com/guide/ipad/bookmark-a-website-ipadc602b75b/ipados",
+    "image": "https://ipcdn-web.apple.com/assets/v2/web/35ccf210-3638-4195-8c3b-3667b6105844"
+  },
+  {
+    "file": "safari-view-more-es.png",
+    "source": "https://support.apple.com/es-us/guide/ipad/ipadc602b75b/ipados",
+    "image": "https://help.apple.com/assets/698A8EFC4AF0A5C4CF042598/698A8F004AF0A5C4CF04259E/es_419/24da4e857e1f81cac6739fea559cede1.png"
+  },
+  {
+    "file": "safari-share-action-en.png",
+    "source": "User-provided iPhone Safari screenshot, 2026-09-26, Photo 2",
+    "originalSha256": "89ca0a10df5d0db8428e8dc9c333f0098d5f49cd30732e20142cdf06a7f60b14",
+    "crop": {
+      "left": 129,
+      "top": 475,
+      "width": 365,
+      "height": 269
+    }
+  },
+  {
+    "file": "safari-phone-more-en.png",
+    "source": "User-provided iPhone Safari share-sheet screenshot, 2026-09-26, Photo 1",
+    "originalSha256": "56279f23ce9ae756373042db04f44367634eaa9a58ede94de47e01d01ce38e3c",
+    "crop": {
+      "left": 40,
+      "top": 1082,
+      "width": 512,
+      "height": 170
+    },
+    "note": "Only the generic action row is included. Contact names and personal photos are excluded."
+  }
+]

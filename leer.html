@@ -2,48 +2,71 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<script src="/posthog.js" defer></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" crossorigin="use-credentials">
+<link rel="apple-touch-icon" href="/assets/app-icon-180.png">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#FFFFFF">
-<title>Lección</title>
+<!--seo:start-->
+<title>Lección bíblica en español | Cursos Bíblicos</title>
+<meta name="description" content="Lee esta lección bíblica, completa los campos disponibles y guarda el PDF con tus respuestas.">
+<meta name="robots" content="noindex, follow">
+<!--seo:end-->
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="/assets/app-icon-192.png" sizes="192x192">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="ui.css">
+<link rel="stylesheet" href="share.css">
 <script src="vendor/jspdf.umd.min.js"></script>
 </head>
 <body>
 <div class="reader">
-  <nav class="readerNav" aria-label="Navegación de la lección">
+  <nav class="readerNav" aria-label="Navegación de la lección" data-ui-es-aria-label="Navegación de la lección" data-ui-en-aria-label="Lesson navigation">
     <button class="navBtn ghost" id="back">Cursos</button>
-    <div class="title" id="title"></div>
+    <h1 class="title" id="title">Lecci&oacute;n</h1>
     <span class="count" id="count"></span>
-    <button class="navBtn" id="prev">Anterior</button>
-    <button class="navBtn" id="next">Siguiente</button>
+    <button class="navBtn" id="fullScreen" type="button" aria-pressed="false" disabled>Pantalla completa</button>
+    <button class="navBtn" id="prev" data-ui-es="Anterior" data-ui-en="Previous">Anterior</button>
+    <button class="navBtn" id="next" data-ui-es="Siguiente" data-ui-en="Next">Siguiente</button>
   </nav>
-  <section class="answerTools" id="answerTools" aria-label="Herramientas para responder">
-    <div class="zoomTools">
-      <button class="wBtn" id="zoomOut" title="Alejar el documento">Alejar</button>
-      <span class="zoomValue" id="zoomValue" aria-live="polite">100%</span>
-      <button class="wBtn" id="zoomIn" title="Acercar el documento">Acercar</button>
-      <button class="wBtn" id="zoomFit" title="Ajustar el documento al ancho">Ajustar</button>
-    </div>
+  <section class="answerTools" id="answerTools" aria-label="Herramientas para responder" data-ui-es-aria-label="Herramientas para responder" data-ui-en-aria-label="Answer tools">
     <span class="toolSpacer"></span>
-    <span class="answerHint" id="answerHint">Toca un recuadro para responder con el teclado.</span>
+    <span class="answerHint" id="answerHint" aria-live="polite">Toca un recuadro para responder con el teclado.</span>
     <div class="answerActions">
-      <button class="wBtn" id="clearAnswers" title="Borrar las respuestas guardadas">Borrar respuestas</button>
-      <button class="wBtn primaryTool" id="savePdf" title="Descargar PDF con respuestas">Guardar PDF</button>
+      <a class="wBtn downloadTool" id="downloadOriginal" target="_blank" rel="noopener" hidden>PDF original</a>
+      <button class="wBtn" id="clearAnswers" title="Borrar las respuestas guardadas" data-ui-es-title="Borrar las respuestas guardadas" data-ui-en-title="Clear saved answers">Borrar respuestas</button>
+      <button class="wBtn primaryTool" id="savePdf" title="Descargar PDF con respuestas" data-ui-es-title="Descargar PDF con respuestas" data-ui-en-title="Download PDF with answers">Guardar PDF</button>
+      <button class="wBtn shareTrigger" id="shareLesson" type="button" disabled data-ui-es="Compartir" data-ui-en="Share">Compartir</button>
     </div>
   </section>
-  <main class="pdfArea" id="pdfArea">
-    <nav class="pdfNav" aria-label="Navegación entre páginas" hidden>
-      <button class="navBtn ghost" id="pgPrev">Página anterior</button>
-      <span class="count" id="pgCount" aria-live="polite"></span>
-      <button class="navBtn ghost" id="pgNext">Página siguiente</button>
-    </nav>
-    <p class="scrollHint" id="scrollHint" hidden>Desliza hacia abajo para ver todas las páginas. También puedes usar los botones.</p>
+  <div class="readerFullScreenBar" hidden>
+    <button class="navBtn" id="exitFullScreen" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      Salir de pantalla completa
+    </button>
+  </div>
+  <main class="pdfArea" id="pdfArea" tabindex="-1">
+    <p class="scrollHint" id="scrollHint" hidden data-ui-es="Desliza hacia abajo para ver todas las páginas." data-ui-en="Scroll down to see every page.">Desliza hacia abajo para ver todas las páginas.</p>
     <div id="pdfBox"></div>
   </main>
+  <div class="readerSlideControls" hidden aria-label="Diapositivas">
+    <button class="navBtn" id="previousSlide" type="button" aria-label="Diapositiva anterior" disabled>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg>
+    </button>
+    <span id="slideCount" role="status" aria-live="polite" aria-atomic="true">1 de 1</span>
+    <button class="navBtn" id="nextSlide" type="button" aria-label="Diapositiva siguiente" disabled>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg>
+    </button>
+  </div>
 </div>
+<script src="lesson-companions.js"></script>
 <script src="verses.js"></script>
+<script src="ui.js"></script>
+<script src="reader-fullscreen.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="share.js"></script>
 <script type="module" src="reader.js"></script>
 </body>
 </html>

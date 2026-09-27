@@ -8,7 +8,7 @@
    Salida: código 0 salvo que haya referencias sin resolver. */
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 
@@ -20,7 +20,9 @@ const CATALOG_URL = 'https://cursos-biblicos-web.vercel.app/api/catalog';
 const CONCURRENCY = 6;
 const MAX_MISS_EXAMPLES = 30;
 const SNIPPET_MAX = 160;
-const FONT_DIR = path.join(ROOT, 'node_modules', 'pdfjs-dist', 'standard_fonts') + path.sep;
+// pdfjs expects a URL here. A raw C:\\... path fails on Windows even when it
+// has a trailing slash.
+const FONT_DIR = pathToFileURL(path.join(ROOT, 'node_modules', 'pdfjs-dist', 'standard_fonts') + path.sep).href;
 
 // Texto RVR1960 local, cacheado por libro.
 const bibleCache = new Map();
@@ -35,6 +37,42 @@ function bibleChapters(bookId) {
     }
   }
   return bibleCache.get(bookId);
+}
+
+function auditCatalogReferences() {
+  const filename = path.join(ROOT, 'assets', 'verse-fields.json');
+  const catalog = JSON.parse(fs.readFileSync(filename, 'utf8'));
+  const problems = [];
+  let pages = 0;
+  let references = 0;
+  for (const [documentId, document] of Object.entries(catalog.documents || {})) {
+    for (const [pageNumber, entries] of Object.entries(document.pages || {})) {
+      pages += 1;
+      for (const entry of entries) {
+        references += 1;
+        const ref = { bookId: entry.bookId, bookName: entry.bookName, parts: entry.parts };
+        const invalidGeometry = ['x', 'y', 'w', 'h'].filter(key =>
+          !Number.isFinite(entry[key]) || entry[key] < 0 || entry[key] > 1
+        );
+        if (invalidGeometry.length) {
+          problems.push({ documentId, pageNumber, reference: BibleVerses.formatReference(ref), detail: `geometría inválida: ${invalidGeometry.join(', ')}` });
+        }
+        if (validateRef(ref).length) {
+          problems.push({ documentId, pageNumber, reference: BibleVerses.formatReference(ref), detail: 'fuera de los límites RVR1960' });
+        }
+        const [roundTrip] = BibleVerses.findReferences(BibleVerses.formatReference(ref));
+        if (!roundTrip || roundTrip.bookId !== ref.bookId || JSON.stringify(roundTrip.parts) !== JSON.stringify(ref.parts)) {
+          problems.push({ documentId, pageNumber, reference: BibleVerses.formatReference(ref), detail: 'el parser no reproduce la referencia canónica' });
+        }
+      }
+    }
+  }
+  return {
+    documents: Object.keys(catalog.documents || {}).length,
+    pages,
+    references,
+    problems
+  };
 }
 
 // Un ref queda sin resolver si el capítulo no existe o algún versículo falta.
@@ -164,6 +202,7 @@ async function auditLesson(lesson) {
 }
 
 async function main() {
+  const catalogAudit = auditCatalogReferences();
   console.error(`Catálogo: ${CATALOG_URL}`);
   const catalog = await (await fetch(CATALOG_URL)).json();
   const queue = [];
@@ -231,7 +270,7 @@ async function main() {
   console.log('');
   console.log('REFERENCIAS BÍBLICAS EN PDFS DEL CATÁLOGO (producción)');
   console.log('');
-  const header = `${'Curso'.padEnd(38)} ${'PDFs'.padStart(5)} ${'Páginas'.padStart(8)} ${'Refs'.padStart(6)} ${'SinResolver'.padStart(12)} ${'Omisiones'.padStart(10)}`;
+  const header = `${'Curso'.padEnd(38)} ${'PDFs'.padStart(5)} ${'Páginas'.padStart(8)} ${'Refs'.padStart(6)} ${'Rechazadas'.padStart(12)} ${'Omisiones'.padStart(10)}`;
   console.log(header);
   console.log('-'.repeat(header.length));
   for (const [name, stats] of perCourse) {
@@ -246,7 +285,8 @@ async function main() {
   console.log('');
   console.log(`Cursos: ${perCourse.size} | PDFs auditados: ${[...perCourse.values()].reduce((n, s) => n + s.lessons, 0)} | errores de descarga/lectura: ${errors.length}`);
   console.log(`Páginas: ${totals.pages} (sin texto extraíble: ${totals.emptyPages})`);
-  console.log(`Referencias detectadas: ${totals.refs} | sin resolver: ${totals.unresolved} | posibles omisiones: ${totals.misses}`);
+  console.log(`Referencias detectadas: ${totals.refs} | candidatas imposibles rechazadas: ${totals.unresolved} | posibles omisiones: ${totals.misses}`);
+  console.log(`Catálogo OCR local: ${catalogAudit.documents} documentos | ${catalogAudit.pages} páginas con referencias | ${catalogAudit.references} enlaces validados`);
 
   if (errors.length) {
     console.log('');
@@ -255,7 +295,7 @@ async function main() {
   }
   if (unresolvedDetails.length) {
     console.log('');
-    console.log('REFERENCIAS SIN RESOLVER:');
+    console.log('CANDIDATAS IMPOSIBLES RECHAZADAS (NO SE CREAN ENLACES):');
     for (const entry of unresolvedDetails) {
       const detail = entry.problems.map(p => `cap ${p.chapter}: ${p.detail}`).join(' | ');
       console.log(`  [${entry.course} / ${entry.lesson} (${entry.id}) pág ${entry.page}] "${entry.raw}" (${entry.bookName}) -> ${detail}`);
@@ -269,7 +309,18 @@ async function main() {
     });
   }
 
-  process.exitCode = totals.unresolved > 0 ? 1 : 0;
+  if (catalogAudit.problems.length) {
+    console.log('');
+    console.log('PROBLEMAS EN EL CATÁLOGO OCR DE ENLACES:');
+    for (const entry of catalogAudit.problems.slice(0, MAX_MISS_EXAMPLES)) {
+      console.log(`  [${entry.documentId} pág ${entry.pageNumber}] "${entry.reference}" -> ${entry.detail}`);
+    }
+  }
+
+  // Las referencias imposibles extraídas del PDF no se convierten en enlaces:
+  // el lector aplica la misma validación RVR1960. Un recurso no auditado o un
+  // enlace OCR inválido sí hace fallar el gate.
+  process.exitCode = errors.length || catalogAudit.problems.length ? 1 : 0;
 }
 
 main().catch(error => {

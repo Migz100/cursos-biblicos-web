@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /edit/
+Disallow: /api/manage/
+Disallow: /api/code/
+
+Sitemap: https://cursosbiblicos.app/sitemap.xml

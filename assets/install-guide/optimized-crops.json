@@ -1,0 +1,62 @@
+[
+  {
+    "source": "safari-classic.png",
+    "file": "safari-classic-toolbar.png",
+    "crop": {
+      "left": 20,
+      "top": 835,
+      "width": 448,
+      "height": 140
+    }
+  },
+  {
+    "source": "safari-add-home-en.png",
+    "file": "safari-menu-home-en.png",
+    "crop": {
+      "left": 27,
+      "top": 674,
+      "width": 535,
+      "height": 198
+    }
+  },
+  {
+    "source": "safari-add-home-es.png",
+    "file": "safari-menu-home-es.png",
+    "crop": {
+      "left": 27,
+      "top": 674,
+      "width": 534,
+      "height": 198
+    }
+  },
+  {
+    "source": "safari-view-more-en.png",
+    "file": "safari-menu-more-en.png",
+    "crop": {
+      "left": 635,
+      "top": 290,
+      "width": 282,
+      "height": 112
+    }
+  },
+  {
+    "source": "safari-view-more-es.png",
+    "file": "safari-menu-more-es.png",
+    "crop": {
+      "left": 635,
+      "top": 290,
+      "width": 282,
+      "height": 112
+    }
+  },
+  {
+    "source": "safari-home.jpg",
+    "file": "safari-modern-toolbar.png",
+    "crop": {
+      "left": 38,
+      "top": 1352,
+      "width": 608,
+      "height": 130
+    }
+  }
+]

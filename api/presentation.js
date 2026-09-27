@@ -1,6 +1,7 @@
 const { allowMethod, sendError, standardHeaders } = require('./_lib/cms/http');
 const { resolvePresentationLesson } = require('./_lib/cms/presentation');
 const { loadManifest, namespace } = require('./_lib/cms/storage');
+const { restrictManifest } = require('./_lib/cms/shares');
 
 function queryValue(req, name) {
   const value = req.query?.[name];
@@ -10,7 +11,7 @@ function queryValue(req, name) {
 module.exports = async function handler(req, res) {
   if (!allowMethod(req, res, ['GET'])) return;
   try {
-    const manifest = await loadManifest();
+    const manifest = await restrictManifest(req, await loadManifest());
     const result = resolvePresentationLesson(manifest, queryValue(req, 'c'), queryValue(req, 'l'), namespace());
     standardHeaders(res);
     res.status(200).json(result);
