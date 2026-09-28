@@ -64,14 +64,15 @@ test('public homepage has crawlable course cards, current counts, canonical and 
   const result = await setup().request('/');
   assert.equal(result.code, 200);
   assert.match(result.body, /<title>Cursos bíblicos gratis en español \| Cursos Bíblicos<\/title>/);
-  assert.match(result.body, /Explora 2 cursos bíblicos/);
+  assert.match(result.body, /Explora 3 cursos bíblicos/);
   assert.match(result.body, /href="\/cursos\/fe-de-jesus\/"/);
+  assert.match(result.body, /href="\/cursos\/la-fe-de-jesus-3\/"/);
   assert.match(result.body, /rel="canonical" href="https:\/\/cursosbiblicos.app\/"/);
   assert.match(result.body, /property="og:title"/);
   assert.match(result.body, /name="twitter:card"/);
   assert.match(result.body, /href="\/home.css"/);
   assert.match(result.body, /src="\/site.js"/);
-  assert.equal(structuredData(result.body)['@graph'][1].numberOfItems, 2);
+  assert.equal(structuredData(result.body)['@graph'][1].numberOfItems, 3);
   assert.equal(result.headers['X-Robots-Tag'], undefined);
 });
 
@@ -184,8 +185,9 @@ test('sitemap contains only public canonical URLs and HEAD sends no HTML or XML 
   const api = setup();
   const result = await api.request('', '', { handler: 'sitemap' });
   assert.equal(result.code, 200);
-  assert.equal((result.body.match(/<url>/g) || []).length, 3);
+  assert.equal((result.body.match(/<url>/g) || []).length, 4);
   assert.match(result.body, /https:\/\/cursosbiblicos.app\/cursos\/fe-de-jesus\//);
+  assert.match(result.body, /https:\/\/cursosbiblicos.app\/cursos\/la-fe-de-jesus-3\//);
   assert.doesNotMatch(result.body, /\?s=|leer\.html|presentacion\.html|__path/);
   assert.equal((await api.request('/', '', { method: 'HEAD' })).body, '');
   assert.equal((await api.request('', '', { method: 'HEAD', handler: 'sitemap' })).body, '');

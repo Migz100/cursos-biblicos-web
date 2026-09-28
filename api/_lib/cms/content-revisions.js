@@ -1,6 +1,7 @@
 const { applyCatalogArchive } = require('./catalog-archive');
 const catalogArchive = require('./catalog-archive.json');
-const CONTENT_REVISION_VERSION = 'content-complete-archive-20260927-v6';
+const { withLaFeDeJesus3 } = require('./la-fe-de-jesus-3');
+const CONTENT_REVISION_VERSION = 'content-la-fe-3-20260928-v7';
 const BLOB_ORIGIN = 'https://s0anajbi1aoffqbv.public.blob.vercel-storage.com';
 const REVISION_PATH = `${BLOB_ORIGIN}/revisions-20260926-salvacion`;
 const ORIGINAL_LESSON = `${BLOB_ORIGIN}/la-fe-de-jesus-v2/Leccion%2007-WDj950nBdSkHchQxIWopEwmjQR6WTw.pdf`;
@@ -20,7 +21,7 @@ const ORIGINAL_PPT_ZIP = `${BLOB_ORIGIN}/zips/la-fe-de-jesus-ppt-LPBj4PmBn0VD4wv
 function applyContentRevisions(manifest) {
   return applyCatalogArchive({
     ...manifest,
-    courses: (manifest.courses || []).map(course => course.id !== '13' ? course : {
+    courses: withLaFeDeJesus3((manifest.courses || []).map(course => course.id !== '13' ? course : {
       ...course,
       ...(course.zip === ORIGINAL_COURSE_ZIP ? { zip: COURSE_ZIP } : {}),
       ...(course.pptZip === ORIGINAL_PPT_ZIP ? { pptZip: PPT_ZIP, pptZipKind: 'current' } : {}),
@@ -34,7 +35,7 @@ function applyContentRevisions(manifest) {
         }
         return lesson;
       }),
-    }),
+    })),
   }, catalogArchive);
 }
 

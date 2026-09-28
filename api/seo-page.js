@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const { loadManifest } = require('./_lib/cms/storage');
 const { restrictManifest, shareTokenFromRequest } = require('./_lib/cms/shares');
+const { applyContentRevisions } = require('./_lib/cms/content-revisions');
 const { applyDefaultCourseCovers } = require('./_lib/cms/course-covers');
 const { standardHeaders } = require('./_lib/cms/http');
 const { resolvePage, renderPage, errorPage } = require('./_lib/cms/seo');
@@ -27,7 +28,7 @@ module.exports = async function handler(req, res) {
     const paths = params.getAll('__path');
     if (paths.length !== 1) { const error = new Error('Invalid route'); error.status = 404; throw error; }
     const scope = shareTokenFromRequest(req);
-    const manifest = applyDefaultCourseCovers(await restrictManifest(req, await loadManifest()));
+    const manifest = applyDefaultCourseCovers(await restrictManifest(req, applyContentRevisions(await loadManifest())));
     const page = resolvePage(paths[0], params, manifest, scope);
     const rendered = renderPage(templates[page.template], page, manifest, scope);
     if (rendered.noindex) res.setHeader('X-Robots-Tag', 'noindex, follow');

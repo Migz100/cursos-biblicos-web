@@ -20405,6 +20405,2972 @@
         "21": [],
         "22": []
       }
+    },
+    "la-fe-de-jesus-3|lf3-01": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-01.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.0781,
+            "y": 0.28848,
+            "w": 0.59048,
+            "h": 0.02364,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.0781,
+            "y": 0.33848,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.0781,
+            "y": 0.39333,
+            "w": 0.59048,
+            "h": 0.02242,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.0781,
+            "y": 0.44364,
+            "w": 0.59048,
+            "h": 0.02121,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.0781,
+            "y": 0.62939,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.0781,
+            "y": 0.68303,
+            "w": 0.59048,
+            "h": 0.02848,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.15905,
+            "y": 0.89091,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.20476,
+            "y": 0.89091,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.24857,
+            "y": 0.89091,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.12095,
+            "y": 0.90666,
+            "w": 0.17429,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.64,
+            "y": 0.92182,
+            "w": 0.02286,
+            "h": 0.01515,
+            "kind": "check",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.76286,
+            "y": 0.92182,
+            "w": 0.04381,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.80762,
+            "y": 0.92182,
+            "w": 0.04286,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.85238,
+            "y": 0.92182,
+            "w": 0.03905,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-02": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-02.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08476,
+            "y": 0.29212,
+            "w": 0.59048,
+            "h": 0.02606,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08476,
+            "y": 0.34424,
+            "w": 0.59048,
+            "h": 0.02485,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08476,
+            "y": 0.51818,
+            "w": 0.59048,
+            "h": 0.02545,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08476,
+            "y": 0.58606,
+            "w": 0.59048,
+            "h": 0.02727,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08476,
+            "y": 0.64121,
+            "w": 0.59048,
+            "h": 0.02606,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08476,
+            "y": 0.69576,
+            "w": 0.59048,
+            "h": 0.02485,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.15619,
+            "y": 0.89576,
+            "w": 0.01524,
+            "h": 0.0103,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.20095,
+            "y": 0.89576,
+            "w": 0.01619,
+            "h": 0.0103,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.24476,
+            "y": 0.89576,
+            "w": 0.01524,
+            "h": 0.0103,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.11714,
+            "y": 0.91212,
+            "w": 0.17524,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.63714,
+            "y": 0.92727,
+            "w": 0.02286,
+            "h": 0.01455,
+            "kind": "check",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.76,
+            "y": 0.92727,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.80476,
+            "y": 0.92727,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.84857,
+            "y": 0.92727,
+            "w": 0.04,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-03": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-03.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08,
+            "y": 0.28364,
+            "w": 0.59048,
+            "h": 0.02848,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08,
+            "y": 0.33939,
+            "w": 0.59048,
+            "h": 0.02848,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08,
+            "y": 0.3997,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08,
+            "y": 0.46182,
+            "w": 0.59048,
+            "h": 0.0297,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08,
+            "y": 0.56394,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08,
+            "y": 0.61848,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.08,
+            "y": 0.67545,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.15619,
+            "y": 0.88788,
+            "w": 0.01524,
+            "h": 0.0103,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.2019,
+            "y": 0.88788,
+            "w": 0.01524,
+            "h": 0.0103,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.24571,
+            "y": 0.88788,
+            "w": 0.01524,
+            "h": 0.0103,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.1181,
+            "y": 0.90424,
+            "w": 0.17429,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.64762,
+            "y": 0.92,
+            "w": 0.02286,
+            "h": 0.01515,
+            "kind": "check",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.77048,
+            "y": 0.92,
+            "w": 0.04381,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.81524,
+            "y": 0.92,
+            "w": 0.04286,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.86,
+            "y": 0.92,
+            "w": 0.03905,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-04": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-04.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08095,
+            "y": 0.28848,
+            "w": 0.59048,
+            "h": 0.02788,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.34576,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.43455,
+            "w": 0.59048,
+            "h": 0.02485,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.4903,
+            "w": 0.59048,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.57636,
+            "w": 0.59048,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.63212,
+            "w": 0.59048,
+            "h": 0.02788,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.68788,
+            "w": 0.59048,
+            "h": 0.02545,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.15714,
+            "y": 0.88848,
+            "w": 0.01619,
+            "h": 0.0103,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.20286,
+            "y": 0.88848,
+            "w": 0.01524,
+            "h": 0.0103,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.24667,
+            "y": 0.88848,
+            "w": 0.01524,
+            "h": 0.0103,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.11905,
+            "y": 0.90484,
+            "w": 0.17429,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.64571,
+            "y": 0.92424,
+            "w": 0.02381,
+            "h": 0.01455,
+            "kind": "check",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.76857,
+            "y": 0.92424,
+            "w": 0.04381,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.81333,
+            "y": 0.92424,
+            "w": 0.04381,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.8581,
+            "y": 0.92424,
+            "w": 0.04,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-05": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-05.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08095,
+            "y": 0.28515,
+            "w": 0.59143,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.34121,
+            "w": 0.59143,
+            "h": 0.0297,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.39758,
+            "w": 0.59143,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.48364,
+            "w": 0.59143,
+            "h": 0.02424,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.53212,
+            "w": 0.59143,
+            "h": 0.02606,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.58152,
+            "w": 0.59143,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.63515,
+            "w": 0.59143,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.07905,
+            "y": 0.68848,
+            "w": 0.59048,
+            "h": 0.02667,
+            "kind": "line",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.1581,
+            "y": 0.8903,
+            "w": 0.01619,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.20381,
+            "y": 0.8903,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.24762,
+            "y": 0.8903,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.12,
+            "y": 0.90606,
+            "w": 0.17429,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.63905,
+            "y": 0.92182,
+            "w": 0.02381,
+            "h": 0.01515,
+            "kind": "check",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.7619,
+            "y": 0.92182,
+            "w": 0.04381,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.80667,
+            "y": 0.92182,
+            "w": 0.04286,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          },
+          {
+            "x": 0.85143,
+            "y": 0.92182,
+            "w": 0.03905,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-16"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-06": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-06.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08381,
+            "y": 0.28364,
+            "w": 0.59048,
+            "h": 0.02667,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08381,
+            "y": 0.33939,
+            "w": 0.59048,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08381,
+            "y": 0.42424,
+            "w": 0.59048,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08381,
+            "y": 0.47939,
+            "w": 0.59048,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08381,
+            "y": 0.57364,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08381,
+            "y": 0.63,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.08381,
+            "y": 0.68424,
+            "w": 0.59048,
+            "h": 0.02606,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.16,
+            "y": 0.88848,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.20476,
+            "y": 0.88848,
+            "w": 0.01619,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.24857,
+            "y": 0.88848,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.12095,
+            "y": 0.90424,
+            "w": 0.17524,
+            "h": 0.01818,
+            "kind": "line",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.65143,
+            "y": 0.92061,
+            "w": 0.02381,
+            "h": 0.01515,
+            "kind": "check",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.77429,
+            "y": 0.92061,
+            "w": 0.04381,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.81905,
+            "y": 0.92061,
+            "w": 0.04381,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.86381,
+            "y": 0.92061,
+            "w": 0.04,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-07": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-07.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08381,
+            "y": 0.28485,
+            "w": 0.59048,
+            "h": 0.02848,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08381,
+            "y": 0.34212,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08381,
+            "y": 0.43212,
+            "w": 0.59048,
+            "h": 0.02727,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08381,
+            "y": 0.48485,
+            "w": 0.59048,
+            "h": 0.0297,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08381,
+            "y": 0.54303,
+            "w": 0.59048,
+            "h": 0.02667,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08381,
+            "y": 0.59879,
+            "w": 0.59048,
+            "h": 0.02667,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.08381,
+            "y": 0.65455,
+            "w": 0.59048,
+            "h": 0.02667,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.15619,
+            "y": 0.88848,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.20095,
+            "y": 0.88848,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.24476,
+            "y": 0.88848,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.11714,
+            "y": 0.90424,
+            "w": 0.17429,
+            "h": 0.01818,
+            "kind": "line",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.6419,
+            "y": 0.92061,
+            "w": 0.02286,
+            "h": 0.01515,
+            "kind": "check",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.76476,
+            "y": 0.92061,
+            "w": 0.04286,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.80952,
+            "y": 0.92061,
+            "w": 0.04286,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.85333,
+            "y": 0.92061,
+            "w": 0.04,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-08": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-08.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08095,
+            "y": 0.28303,
+            "w": 0.59048,
+            "h": 0.02667,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.33848,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.44,
+            "w": 0.59048,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.49455,
+            "w": 0.59048,
+            "h": 0.02788,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.54909,
+            "w": 0.59048,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.63515,
+            "w": 0.59048,
+            "h": 0.02788,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.69091,
+            "w": 0.59048,
+            "h": 0.02848,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.16095,
+            "y": 0.8903,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.20571,
+            "y": 0.8903,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.24952,
+            "y": 0.8903,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.1219,
+            "y": 0.90606,
+            "w": 0.17429,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.64095,
+            "y": 0.92182,
+            "w": 0.02381,
+            "h": 0.01515,
+            "kind": "check",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.76381,
+            "y": 0.92182,
+            "w": 0.04381,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.80857,
+            "y": 0.92182,
+            "w": 0.04381,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.85333,
+            "y": 0.92182,
+            "w": 0.03905,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-09": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-09.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.0819,
+            "y": 0.28121,
+            "w": 0.59048,
+            "h": 0.0297,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.33697,
+            "w": 0.59048,
+            "h": 0.02364,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.41758,
+            "w": 0.59048,
+            "h": 0.02788,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.47424,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.52909,
+            "w": 0.59048,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.58485,
+            "w": 0.59048,
+            "h": 0.02848,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.64,
+            "w": 0.59048,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.69273,
+            "w": 0.59048,
+            "h": 0.02364,
+            "kind": "line",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.15714,
+            "y": 0.88848,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.20286,
+            "y": 0.88848,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.24571,
+            "y": 0.88848,
+            "w": 0.01619,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.11905,
+            "y": 0.90424,
+            "w": 0.17429,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.64571,
+            "y": 0.92061,
+            "w": 0.02286,
+            "h": 0.01455,
+            "kind": "check",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.76857,
+            "y": 0.92061,
+            "w": 0.04381,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.81333,
+            "y": 0.92061,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          },
+          {
+            "x": 0.8581,
+            "y": 0.92061,
+            "w": 0.03905,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-16"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-10": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-10.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08095,
+            "y": 0.28667,
+            "w": 0.59048,
+            "h": 0.02848,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.34333,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.3997,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.45606,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.54485,
+            "w": 0.59048,
+            "h": 0.0297,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.59909,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.65727,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.15714,
+            "y": 0.8897,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.20286,
+            "y": 0.8897,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.24667,
+            "y": 0.8897,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.11905,
+            "y": 0.90545,
+            "w": 0.17429,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.64095,
+            "y": 0.92182,
+            "w": 0.02286,
+            "h": 0.01455,
+            "kind": "check",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.76381,
+            "y": 0.92182,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.80857,
+            "y": 0.92182,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.85238,
+            "y": 0.92182,
+            "w": 0.04,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-11": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-11.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08095,
+            "y": 0.28152,
+            "w": 0.59143,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.33909,
+            "w": 0.59143,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.43121,
+            "w": 0.59143,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.49727,
+            "w": 0.59143,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.56333,
+            "w": 0.59143,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.62879,
+            "w": 0.59143,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.68758,
+            "w": 0.59143,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.15238,
+            "y": 0.88788,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.1981,
+            "y": 0.88788,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.2419,
+            "y": 0.88788,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.11429,
+            "y": 0.90364,
+            "w": 0.17429,
+            "h": 0.01818,
+            "kind": "line",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.64381,
+            "y": 0.92,
+            "w": 0.02381,
+            "h": 0.01515,
+            "kind": "check",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.76667,
+            "y": 0.92,
+            "w": 0.04381,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.81143,
+            "y": 0.92,
+            "w": 0.04286,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.85619,
+            "y": 0.92,
+            "w": 0.03905,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-12": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-12.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08095,
+            "y": 0.28333,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.33939,
+            "w": 0.59048,
+            "h": 0.02667,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.3897,
+            "w": 0.59048,
+            "h": 0.0297,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.44606,
+            "w": 0.59048,
+            "h": 0.02667,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.49879,
+            "w": 0.59048,
+            "h": 0.02606,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.55212,
+            "w": 0.59048,
+            "h": 0.0297,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.64121,
+            "w": 0.59048,
+            "h": 0.02242,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.6903,
+            "w": 0.59048,
+            "h": 0.02788,
+            "kind": "line",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.1619,
+            "y": 0.89212,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.20762,
+            "y": 0.89212,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.25143,
+            "y": 0.89212,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.12381,
+            "y": 0.90787,
+            "w": 0.17429,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.64571,
+            "y": 0.92424,
+            "w": 0.02286,
+            "h": 0.01455,
+            "kind": "check",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.76857,
+            "y": 0.92424,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.81333,
+            "y": 0.92424,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          },
+          {
+            "x": 0.85714,
+            "y": 0.92424,
+            "w": 0.04,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-16"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-13": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-13.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08095,
+            "y": 0.28485,
+            "w": 0.59048,
+            "h": 0.02667,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.46364,
+            "w": 0.59048,
+            "h": 0.02727,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.52061,
+            "w": 0.59048,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.57576,
+            "w": 0.59048,
+            "h": 0.02545,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.6303,
+            "w": 0.59048,
+            "h": 0.02788,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.68424,
+            "w": 0.59048,
+            "h": 0.0297,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.15714,
+            "y": 0.8903,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.2019,
+            "y": 0.8903,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.24571,
+            "y": 0.8903,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.1181,
+            "y": 0.90606,
+            "w": 0.17524,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.64,
+            "y": 0.92242,
+            "w": 0.02381,
+            "h": 0.01455,
+            "kind": "check",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.76286,
+            "y": 0.92242,
+            "w": 0.04381,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.80762,
+            "y": 0.92242,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.85238,
+            "y": 0.92242,
+            "w": 0.03905,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-14": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-14.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08095,
+            "y": 0.28121,
+            "w": 0.59048,
+            "h": 0.02121,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.32848,
+            "w": 0.59048,
+            "h": 0.02303,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.4097,
+            "w": 0.59048,
+            "h": 0.02061,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.45697,
+            "w": 0.59048,
+            "h": 0.02182,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.50424,
+            "w": 0.59048,
+            "h": 0.02788,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.58727,
+            "w": 0.59048,
+            "h": 0.02182,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.63455,
+            "w": 0.59048,
+            "h": 0.02303,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.68182,
+            "w": 0.59048,
+            "h": 0.02485,
+            "kind": "line",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.16286,
+            "y": 0.8897,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.20857,
+            "y": 0.8897,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.25238,
+            "y": 0.8897,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.12476,
+            "y": 0.90545,
+            "w": 0.17429,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.64667,
+            "y": 0.92182,
+            "w": 0.02286,
+            "h": 0.01455,
+            "kind": "check",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.76952,
+            "y": 0.92182,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.81429,
+            "y": 0.92182,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          },
+          {
+            "x": 0.8581,
+            "y": 0.92182,
+            "w": 0.04,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-16"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-15": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-15.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08,
+            "y": 0.28485,
+            "w": 0.59048,
+            "h": 0.02667,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08,
+            "y": 0.34061,
+            "w": 0.59048,
+            "h": 0.02545,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08,
+            "y": 0.39636,
+            "w": 0.59048,
+            "h": 0.0297,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08,
+            "y": 0.4897,
+            "w": 0.59048,
+            "h": 0.02848,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08,
+            "y": 0.56364,
+            "w": 0.59048,
+            "h": 0.02848,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08,
+            "y": 0.65788,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.16381,
+            "y": 0.88727,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.20952,
+            "y": 0.88727,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.25238,
+            "y": 0.88727,
+            "w": 0.01619,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.12571,
+            "y": 0.90303,
+            "w": 0.17429,
+            "h": 0.01818,
+            "kind": "line",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.64667,
+            "y": 0.91939,
+            "w": 0.02381,
+            "h": 0.01515,
+            "kind": "check",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.76952,
+            "y": 0.91939,
+            "w": 0.04381,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.81524,
+            "y": 0.91939,
+            "w": 0.04286,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.85905,
+            "y": 0.91939,
+            "w": 0.04,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-16": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-16.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.0819,
+            "y": 0.28364,
+            "w": 0.59048,
+            "h": 0.02242,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.3297,
+            "w": 0.59048,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.41091,
+            "w": 0.59048,
+            "h": 0.02,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.46061,
+            "w": 0.59048,
+            "h": 0.02,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.51006,
+            "w": 0.59048,
+            "h": 0.016,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.57273,
+            "w": 0.59048,
+            "h": 0.02182,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.64485,
+            "w": 0.59048,
+            "h": 0.02424,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.0819,
+            "y": 0.69576,
+            "w": 0.59048,
+            "h": 0.02364,
+            "kind": "line",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.16,
+            "y": 0.89152,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.20571,
+            "y": 0.89152,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.24857,
+            "y": 0.89152,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.12095,
+            "y": 0.90727,
+            "w": 0.17524,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.64286,
+            "y": 0.92364,
+            "w": 0.02381,
+            "h": 0.01455,
+            "kind": "check",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.76571,
+            "y": 0.92364,
+            "w": 0.04381,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.81143,
+            "y": 0.92364,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          },
+          {
+            "x": 0.85524,
+            "y": 0.92364,
+            "w": 0.04,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-16"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-17": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-17.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08095,
+            "y": 0.28091,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.33364,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.3897,
+            "w": 0.59048,
+            "h": 0.02061,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.56333,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.62879,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.68606,
+            "w": 0.59048,
+            "h": 0.02909,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.16095,
+            "y": 0.8897,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.20667,
+            "y": 0.8897,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.25048,
+            "y": 0.8897,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.12286,
+            "y": 0.90545,
+            "w": 0.17429,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.64476,
+            "y": 0.92182,
+            "w": 0.02286,
+            "h": 0.01455,
+            "kind": "check",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.76762,
+            "y": 0.92182,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.81238,
+            "y": 0.92182,
+            "w": 0.04286,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.85619,
+            "y": 0.92182,
+            "w": 0.04,
+            "h": 0.01455,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-18": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-18.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08,
+            "y": 0.28455,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08,
+            "y": 0.35061,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08,
+            "y": 0.40424,
+            "w": 0.59048,
+            "h": 0.02606,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08,
+            "y": 0.51303,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08,
+            "y": 0.57788,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.08,
+            "y": 0.6397,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.08,
+            "y": 0.70945,
+            "w": 0.59048,
+            "h": 0.016,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.1581,
+            "y": 0.8903,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.20381,
+            "y": 0.8903,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.24667,
+            "y": 0.8903,
+            "w": 0.01619,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.12,
+            "y": 0.90606,
+            "w": 0.17429,
+            "h": 0.01818,
+            "kind": "line",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.64095,
+            "y": 0.92242,
+            "w": 0.02381,
+            "h": 0.01515,
+            "kind": "check",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.76381,
+            "y": 0.92242,
+            "w": 0.04381,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.80952,
+            "y": 0.92242,
+            "w": 0.04286,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.85333,
+            "y": 0.92242,
+            "w": 0.04,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-15"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-19": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-19.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.07905,
+            "y": 0.27818,
+            "w": 0.59048,
+            "h": 0.02121,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.07905,
+            "y": 0.32121,
+            "w": 0.59048,
+            "h": 0.01879,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.07905,
+            "y": 0.36485,
+            "w": 0.59048,
+            "h": 0.01818,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.07905,
+            "y": 0.4297,
+            "w": 0.59048,
+            "h": 0.02242,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.07905,
+            "y": 0.47212,
+            "w": 0.59048,
+            "h": 0.02667,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.07905,
+            "y": 0.54364,
+            "w": 0.59048,
+            "h": 0.02242,
+            "kind": "line",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.07905,
+            "y": 0.5903,
+            "w": 0.59048,
+            "h": 0.02424,
+            "kind": "line",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.07905,
+            "y": 0.66424,
+            "w": 0.59048,
+            "h": 0.02242,
+            "kind": "line",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.07905,
+            "y": 0.7097,
+            "w": 0.59048,
+            "h": 0.01879,
+            "kind": "line",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.07905,
+            "y": 0.77515,
+            "w": 0.59048,
+            "h": 0.02061,
+            "kind": "line",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.07905,
+            "y": 0.82061,
+            "w": 0.59048,
+            "h": 0.01818,
+            "kind": "line",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.16,
+            "y": 0.88909,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.20476,
+            "y": 0.88909,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-13"
+          },
+          {
+            "x": 0.24857,
+            "y": 0.88909,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-14"
+          },
+          {
+            "x": 0.12095,
+            "y": 0.90545,
+            "w": 0.17524,
+            "h": 0.01758,
+            "kind": "line",
+            "verified": true,
+            "id": "field-15"
+          },
+          {
+            "x": 0.64286,
+            "y": 0.92121,
+            "w": 0.02381,
+            "h": 0.01515,
+            "kind": "check",
+            "verified": true,
+            "id": "field-16"
+          },
+          {
+            "x": 0.76571,
+            "y": 0.92121,
+            "w": 0.04381,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-17"
+          },
+          {
+            "x": 0.81048,
+            "y": 0.92121,
+            "w": 0.04286,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-18"
+          },
+          {
+            "x": 0.85524,
+            "y": 0.92121,
+            "w": 0.03905,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-19"
+          }
+        ],
+        "2": []
+      }
+    },
+    "la-fe-de-jesus-3|lf3-20": {
+      "url": "https://s0anajbi1aoffqbv.public.blob.vercel-storage.com/la-fe-de-jesus-3/leccion-20.pdf",
+      "pages": {
+        "1": [
+          {
+            "x": 0.08095,
+            "y": 0.28182,
+            "w": 0.59048,
+            "h": 0.02242,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.52455,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.5803,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.63545,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-4"
+          },
+          {
+            "x": 0.08095,
+            "y": 0.69242,
+            "w": 0.59048,
+            "h": 0.03,
+            "kind": "line",
+            "verified": true,
+            "id": "field-5"
+          },
+          {
+            "x": 0.1619,
+            "y": 0.88788,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-6"
+          },
+          {
+            "x": 0.20762,
+            "y": 0.88788,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-7"
+          },
+          {
+            "x": 0.25143,
+            "y": 0.88788,
+            "w": 0.01524,
+            "h": 0.0097,
+            "kind": "radio",
+            "group": "calificacion",
+            "verified": true,
+            "id": "field-8"
+          },
+          {
+            "x": 0.12381,
+            "y": 0.90364,
+            "w": 0.17429,
+            "h": 0.01818,
+            "kind": "line",
+            "verified": true,
+            "id": "field-9"
+          },
+          {
+            "x": 0.64571,
+            "y": 0.92,
+            "w": 0.02286,
+            "h": 0.01515,
+            "kind": "check",
+            "verified": true,
+            "id": "field-10"
+          },
+          {
+            "x": 0.76857,
+            "y": 0.92,
+            "w": 0.04286,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-11"
+          },
+          {
+            "x": 0.81333,
+            "y": 0.92,
+            "w": 0.04286,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-12"
+          },
+          {
+            "x": 0.85714,
+            "y": 0.92,
+            "w": 0.04,
+            "h": 0.01515,
+            "kind": "box",
+            "verified": true,
+            "id": "field-13"
+          }
+        ],
+        "2": [
+          {
+            "x": 0.19333,
+            "y": 0.84691,
+            "w": 0.3819,
+            "h": 0.024,
+            "kind": "line",
+            "verified": true,
+            "id": "field-1"
+          },
+          {
+            "x": 0.17143,
+            "y": 0.87358,
+            "w": 0.40286,
+            "h": 0.024,
+            "kind": "line",
+            "verified": true,
+            "id": "field-2"
+          },
+          {
+            "x": 0.2419,
+            "y": 0.90024,
+            "w": 0.32952,
+            "h": 0.024,
+            "kind": "line",
+            "verified": true,
+            "id": "field-3"
+          }
+        ]
+      }
     }
   }
 }
