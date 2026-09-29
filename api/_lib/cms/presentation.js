@@ -24,6 +24,10 @@ function officeViewerUrl(assetUrl) {
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(assetUrl)}`;
 }
 
+function localPdfUrl(courseId, lessonId) {
+  return `/api/presentation-pdf?c=${encodeURIComponent(courseId)}&l=${encodeURIComponent(lessonId)}`;
+}
+
 function catalogAssetUrl(value, pathname) {
   const trusted = trustedBlobUrl(value);
   let actualPath;
@@ -69,6 +73,7 @@ function resolvePresentationLesson(manifest, courseId, lessonId, expectedNamespa
       originalName: lesson.originalName,
       downloadUrl
     },
+    pdfUrl: localPdfUrl(course.id, lesson.id),
     viewerUrl: officeViewerUrl(assetUrl)
   };
 }
@@ -76,6 +81,7 @@ function resolvePresentationLesson(manifest, courseId, lessonId, expectedNamespa
 module.exports = {
   PRESENTATION_TYPES,
   catalogAssetUrl,
+  localPdfUrl,
   officeViewerUrl,
   resolvePresentationLesson,
   trustedBlobUrl

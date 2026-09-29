@@ -243,8 +243,21 @@ input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; }
 /* Presentation viewer */
 .presentationViewer { position: fixed; inset: 0; display: flex; flex-direction: column; background: #fff; }
 .presentationNav .navBtn { text-decoration: none; text-align: center; }
-.presentationStage { position: relative; flex: 1; min-height: 0; display: flex; background: #111; }
-.presentationStage iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+.presentationControls {
+  min-height: 52px; padding: 6px max(10px, env(safe-area-inset-right)) 6px max(10px, env(safe-area-inset-left));
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  border-bottom: 1px solid var(--line); background: #fff;
+}
+.presentationPageLabel { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: 14px; }
+.presentationPageLabel input {
+  width: 64px; min-height: 40px; padding: 6px; border: 1px solid var(--line); border-radius: 9px;
+  color: var(--text); background: #fff; font: inherit; text-align: center;
+}
+.presentationStage {
+  position: relative; flex: 1; min-height: 0; display: grid; place-items: center;
+  overflow: hidden; padding: 12px; background: #111; outline: none;
+}
+.presentationStage canvas { display: block; max-width: 100%; max-height: 100%; background: #fff; box-shadow: 0 3px 18px rgba(0,0,0,0.35); }
 .presentationStatus {
   position: absolute; inset: 0; display: grid; place-items: center;
   background: #F5F5F7; color: var(--text2); font-size: 16px; z-index: 2;
@@ -257,7 +270,7 @@ input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; }
   box-shadow: 0 4px 24px rgba(0,0,0,0.2); z-index: 3;
 }
 .presentationFallback strong { color: var(--text); }
-.presentationStatus[hidden], .presentationFallback[hidden], .presentationStage iframe[hidden] { display: none; }
+.presentationStatus[hidden], .presentationFallback[hidden], .presentationStage canvas[hidden] { display: none; }
 .presentationStage:fullscreen { background: #000; }
 
 @media (max-width: 520px) {
@@ -285,4 +298,9 @@ input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; }
   .presentationNav .title { flex-basis: calc(100% - 78px); }
   .presentationNav .navBtn { min-width: 0; padding: 7px 9px; font-size: 12px; }
   .presentationBack { min-width: 68px !important; }
+  .presentationControls { min-height: 50px; gap: 6px; }
+  .presentationControls .navBtn { min-height: 40px; min-width: 82px; padding: 7px 9px; font-size: 12px; }
+  .presentationPageLabel { gap: 4px; font-size: 12px; }
+  .presentationPageLabel input { width: 50px; min-height: 40px; }
+  .presentationStage { padding: 8px max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
 }
