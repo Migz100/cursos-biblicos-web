@@ -7,33 +7,40 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#FFFFFF">
 <title>Presentación</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="presentationViewer">
-  <div class="readerNav presentationNav">
+  <nav class="readerNav presentationNav" aria-label="Navegación de la presentación">
     <a class="navBtn ghost presentationBack" id="back" href="index.html">Curso</a>
     <div class="title" id="title">Cargando presentación...</div>
-    <button class="navBtn" id="fullScreen" type="button">Pantalla completa</button>
-    <a class="navBtn ghost" id="openViewer" target="_blank" rel="noopener" hidden>Abrir</a>
-    <button class="navBtn ghost" id="download" type="button" disabled>Descargar</button>
-  </div>
-  <div class="presentationStage" id="stage">
-    <div class="presentationStatus" id="status" role="status">Preparando la presentación...</div>
-    <iframe
-      id="presentationFrame"
-      title="Visor de presentación"
-      referrerpolicy="no-referrer"
-      sandbox="allow-downloads allow-forms allow-same-origin allow-scripts"
-      allow="fullscreen"
-      allowfullscreen
-      hidden></iframe>
-    <div class="presentationFallback" id="fallback" hidden>
-      <strong>No se pudo mostrar la presentación.</strong>
-      <span>Puedes abrir el visor en otra pestaña o descargar el archivo.</span>
+    <div class="presentationActions">
+      <button class="navBtn" id="fullScreen" type="button" disabled>Pantalla completa</button>
+      <a class="navBtn ghost" id="download" rel="noopener" aria-disabled="true">Descargar original</a>
     </div>
+  </nav>
+  <div class="presentationToolbar" aria-label="Controles de páginas">
+    <button class="navBtn ghost" id="prev" type="button" disabled>Anterior</button>
+    <label class="presentationPageLabel" for="pageInput">
+      <span>Página</span>
+      <input id="pageInput" type="number" inputmode="numeric" min="1" value="1" disabled>
+      <span id="pageTotal">de —</span>
+    </label>
+    <button class="navBtn ghost" id="next" type="button" disabled>Siguiente</button>
+    <button class="navBtn ghost presentationFit" id="fit" type="button" disabled>Ajustar ancho</button>
   </div>
+  <main class="presentationStage" id="stage" tabindex="-1">
+    <div class="presentationStatus" id="status" role="status" aria-live="polite">Preparando la presentación...</div>
+    <div class="presentationCanvasWrap" id="canvasWrap" hidden>
+      <canvas id="presentationCanvas" aria-label="Página de la presentación"></canvas>
+    </div>
+    <div class="presentationFallback" id="fallback" role="alert" hidden>
+      <strong>No se pudo mostrar la presentación.</strong>
+      <span>Vuelve al curso o descarga el archivo original.</span>
+    </div>
+  </main>
 </div>
-<script src="presentation.js"></script>
+<script type="module" src="presentation.js"></script>
 </body>
 </html>

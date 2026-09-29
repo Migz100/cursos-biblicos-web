@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Cursos Bíblicos">
+  <rect width="64" height="64" rx="14" fill="#0a63b8"/>
+  <path d="M10 17.5c8.3-2.8 15.4-1.6 22 3.5v29.5c-6.6-5.1-13.7-6.3-22-3.5V17.5Z" fill="#fff"/>
+  <path d="M54 17.5c-8.3-2.8-15.4-1.6-22 3.5v29.5c6.6-5.1 13.7-6.3 22-3.5V17.5Z" fill="#f5f7fb"/>
+  <path d="M32 21v29.5" stroke="#e4a11b" stroke-width="3" stroke-linecap="round"/>
+  <path d="M16 25.5c4.1-.7 7.7-.1 11 1.8M16 33c4.1-.7 7.7-.1 11 1.8M48 25.5c-4.1-.7-7.7-.1-11 1.8M48 33c-4.1-.7-7.7-.1-11 1.8" fill="none" stroke="#8aa4bf" stroke-width="2" stroke-linecap="round"/>
+</svg>
