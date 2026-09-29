@@ -1,3 +1,4 @@
+param([switch]$SetupIsolation)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Security
 $HostRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'data'))
@@ -39,6 +40,11 @@ try {
   }
 
   Set-Location -LiteralPath $PSScriptRoot
+  if ($SetupIsolation) {
+    & $NodePath $HostScript '--setup-isolation' *>> $LogPath
+    if ($LASTEXITCODE -ne 0) { throw 'Windows sandbox isolation setup failed.' }
+    exit 0
+  }
   while ($true) {
     & $NodePath $HostScript *>> $LogPath
     Start-Sleep -Seconds 5

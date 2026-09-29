@@ -30,7 +30,11 @@ foreach ($HostProcess in $OrphanedHosts) {
   Stop-Process -Id $HostProcess.ProcessId -Force
 }
 New-Item -ItemType Directory -Path $RuntimeRoot -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'code-host.mjs') -Destination (Join-Path $RuntimeRoot 'code-host.mjs') -Force
+foreach ($RuntimeModule in @('code-host.mjs', 'code-host-runtime.mjs', 'code-host-lib.mjs')) {
+  $RuntimeSource = Join-Path $PSScriptRoot $RuntimeModule
+  if (-not (Test-Path -LiteralPath $RuntimeSource)) { throw "Missing runtime module: $RuntimeModule" }
+  Copy-Item -LiteralPath $RuntimeSource -Destination (Join-Path $RuntimeRoot $RuntimeModule) -Force
+}
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'start-code-host.ps1') -Destination (Join-Path $RuntimeRoot 'start-code-host.ps1') -Force
 [System.IO.File]::WriteAllText($PathSnapshot, $env:PATH, [System.Text.UTF8Encoding]::new($false))
 $ConfigBytes = [System.IO.File]::ReadAllBytes($ConfigPath)
@@ -39,8 +43,14 @@ $ProtectedConfig = [System.Security.Cryptography.ProtectedData]::Protect($Config
 [Array]::Clear($ConfigBytes, 0, $ConfigBytes.Length)
 [Array]::Clear($ProtectedConfig, 0, $ProtectedConfig.Length)
 
+# The public editor must not start until Codex configures its elevated Windows
+# sandbox and the runtime proves the outside-workspace read canary is denied.
 $Starter = Join-Path $RuntimeRoot 'start-code-host.ps1'
 $PowerShellPath = (Get-Command powershell.exe -ErrorAction Stop).Source
+$IsolationArguments = "-NoProfile -ExecutionPolicy Bypass -File `"$Starter`" -SetupIsolation"
+$IsolationProcess = Start-Process -FilePath $PowerShellPath -ArgumentList $IsolationArguments -WindowStyle Hidden -Wait -PassThru
+if ($IsolationProcess.ExitCode -ne 0) { throw 'Elevated Windows sandbox verification failed; the public code host was not activated.' }
+
 $Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Starter`""
 $Action = New-ScheduledTaskAction -Execute $PowerShellPath -Argument $Arguments
 $CurrentAccount = (whoami.exe).Trim()

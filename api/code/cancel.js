@@ -10,7 +10,9 @@ module.exports = async function handler(req, res) {
     requireEditor(req);
     const input = await readJson(req, 4096);
     const jobId = requireUuid(input.jobId, 'trabajo');
+    const clientId = requireUuid(input.clientId, 'navegador');
+    const conversationId = requireUuid(input.conversationId, 'chat');
     standardHeaders(res);
-    res.status(200).json(await requestCancellation(jobId));
+    res.status(200).json(await requestCancellation(jobId, clientId, conversationId));
   } catch (error) { sendError(res, error); }
 };

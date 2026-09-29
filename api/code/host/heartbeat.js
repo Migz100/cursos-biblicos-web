@@ -20,7 +20,14 @@ module.exports = async function handler(req, res) {
       version: String(input.version || '').slice(0, 30),
       busy: Boolean(input.busy),
       currentJobId: input.currentJobId ? requireUuid(input.currentJobId, 'trabajo') : null,
-      providers
+      providers,
+      connection: ['starting', 'ready', 'busy', 'degraded', 'offline'].includes(String(input.connection)) ? String(input.connection) : 'ready',
+      appServer: input.appServer && typeof input.appServer === 'object' ? {
+        ready: Boolean(input.appServer.ready),
+        model: String(input.appServer.model || '').slice(0, 60),
+        effort: String(input.appServer.effort || '').slice(0, 30),
+        serviceTier: String(input.appServer.serviceTier || '').slice(0, 30)
+      } : null
     });
     standardHeaders(res);
     res.status(200).json({ ok: true });

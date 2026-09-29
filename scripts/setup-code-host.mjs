@@ -82,8 +82,8 @@ function verifyPinnedCheckout() {
   const git = process.platform === 'win32' ? 'git.exe' : 'git';
   const remote = spawnSync(git, ['remote', 'get-url', 'origin'], { cwd: REPO_ROOT, encoding: 'utf8', windowsHide: true });
   if (remote.status !== 0 || String(remote.stdout || '').trim().toLowerCase() !== expectedGitRemote.toLowerCase()) throw new Error('This checkout is not linked to the expected GitHub repository.');
-  const link = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, '.vercel', 'project.json'), 'utf8'));
-  if (link.projectId !== expectedProjectId || link.orgId !== expectedOrgId) throw new Error('This checkout is not linked to the expected Vercel project.');
+  // Destination IDs are pinned and passed explicitly. Provider-link files are
+  // intentionally not opened or inspected here.
 }
 
 function sha256(value) {

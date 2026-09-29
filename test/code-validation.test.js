@@ -1,15 +1,16 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { cleanEvent, validateJobInput } = require('../api/_lib/code/validation');
+const CLIENT_ID = '01900000-0000-7000-8000-000000000010';
 
 test('plain-language coding jobs are bounded and normalized', () => {
-  const job = validateJobInput({ action: 'prompt', mode: 'edit', provider: 'auto', prompt: '  Cambia el color\r\npor favor.  ' });
+  const job = validateJobInput({ clientId: CLIENT_ID, action: 'prompt', mode: 'edit', provider: 'auto', prompt: '  Cambia el color\r\npor favor.  ' });
   assert.equal(job.prompt, 'Cambia el color\npor favor.');
   assert.equal(job.action, 'prompt');
   assert.match(job.id, /^[0-9a-f-]{36}$/);
-  assert.throws(() => validateJobInput({ action: 'prompt', prompt: '' }), error => error.code === 'INVALID_PROMPT');
-  assert.throws(() => validateJobInput({ action: 'delete-everything', prompt: 'x' }), error => error.code === 'INVALID_ACTION');
-  assert.throws(() => validateJobInput({ action: 'prompt', provider: 'unknown', prompt: 'x' }), error => error.code === 'INVALID_PROVIDER');
+  assert.throws(() => validateJobInput({ clientId: CLIENT_ID, action: 'prompt', prompt: '' }), error => error.code === 'INVALID_PROMPT');
+  assert.throws(() => validateJobInput({ clientId: CLIENT_ID, action: 'delete-everything', prompt: 'x' }), error => error.code === 'INVALID_ACTION');
+  assert.throws(() => validateJobInput({ clientId: CLIENT_ID, action: 'prompt', provider: 'unknown', prompt: 'x' }), error => error.code === 'INVALID_PROVIDER');
 });
 
 test('host events have safe sequence values and bounded content', () => {

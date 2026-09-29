@@ -1,7 +1,7 @@
 {
   "name": "Editar Cursos Bíblicos",
   "short_name": "Editar app",
-  "description": "Ayudante privado para cambiar y publicar la app Cursos Bíblicos.",
+  "description": "Ayudante para revisar, cambiar y publicar la app Cursos Bíblicos.",
   "start_url": "/edit/",
   "scope": "/edit/",
   "display": "standalone",

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F5F5F7">
+<meta name="theme-color" content="#F4F5F8">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,78 +16,235 @@
 <link rel="stylesheet" href="edit.css">
 </head>
 <body>
-<main class="accessGate" id="accessGate" hidden>
-  <section class="gateCard" aria-labelledby="accessGateTitle">
-    <h1 id="accessGateTitle">Este dispositivo no está conectado</h1>
-    <p>Abre aquí el enlace privado que Miguel te envió. Solo necesitas hacerlo una vez en cada iPhone, iPad o computadora.</p>
-    <a href="../index.html">Volver a Cursos Bíblicos</a>
-  </section>
-</main>
+<a class="skipLink" href="#conversation">Saltar a la conversación</a>
 
-<div class="appShell" id="appShell" hidden>
+<div class="appShell" id="appShell" data-connection="connecting">
   <header class="topbar">
     <div class="topbarInner">
-      <a class="backLink" href="../admin/">Administrar</a>
+      <button class="iconButton threadToggle" id="threadToggle" type="button" aria-controls="threadSidebar" aria-expanded="false">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h10"/></svg>
+        <span class="srOnly">Ver conversaciones</span>
+      </button>
+      <a class="backLink" href="../admin/" aria-label="Volver a Administrar">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+        <span>Administrar</span>
+      </a>
       <div class="appIdentity">
-        <div><strong>Editar app</strong><span>Cursos Bíblicos</span></div>
+        <span class="appMark" aria-hidden="true">CB</span>
+        <span><strong>Editar app</strong><small>Cursos Bíblicos</small></span>
       </div>
-      <button class="hostStatus" id="hostStatus" type="button" aria-label="Estado de la computadora">
-        <span class="statusDot"></span><span id="hostStatusText">Conectando…</span>
+      <button class="hostStatus" id="hostStatus" type="button" aria-controls="connectionPanel" aria-expanded="false">
+        <span class="statusDot" aria-hidden="true"></span>
+        <span id="hostStatusText">Conectando…</span>
       </button>
     </div>
   </header>
 
-  <main class="editorMain">
-    <section class="welcome" id="welcome">
-      <span class="eyebrow">Tu ayudante de programación</span>
-      <h1>Dime qué quieres cambiar.</h1>
-      <p>Yo reviso todos los archivos, hago el trabajo y compruebo que la app siga funcionando.</p>
-      <div class="suggestions" role="group" aria-label="Ejemplos">
-        <button type="button" data-suggestion="Haz que los títulos de los cursos se vean más grandes en el iPhone.">Títulos más grandes</button>
-        <button type="button" data-suggestion="Agrega una forma sencilla de encontrar una lección por su nombre.">Mejorar la búsqueda</button>
-        <button type="button" data-suggestion="Revisa toda la app y arregla cualquier problema que encuentres en iPhone y iPad.">Revisar la app</button>
+  <div class="workspace">
+    <div class="sidebarScrim" id="sidebarScrim" hidden></div>
+    <aside class="threadSidebar" id="threadSidebar" aria-label="Conversaciones" aria-hidden="false">
+      <div class="sidebarHeader">
+        <div>
+          <span class="sectionEyebrow">Historial</span>
+          <h2>Conversaciones</h2>
+        </div>
+        <button class="iconButton sidebarClose" id="threadCloseButton" type="button">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>
+          <span class="srOnly">Cerrar conversaciones</span>
+        </button>
       </div>
-    </section>
+      <button class="newThreadButton" id="newThreadButton" type="button">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Nueva conversación
+      </button>
+      <nav class="threadList" id="threadList" aria-label="Conversaciones guardadas"></nav>
+      <p class="historyNote">Solo se muestran conversaciones iniciadas desde esta app en este dispositivo.</p>
+    </aside>
 
-    <section class="conversation" id="conversation" aria-live="polite" aria-label="Conversación"></section>
+    <div class="editorColumn">
+      <div class="editorScroll" id="editorScroll">
+        <main class="editorMain">
+          <section class="connectionBanner" id="connectionBanner" role="status" aria-live="polite">
+            <span class="bannerIcon" aria-hidden="true"></span>
+            <div>
+              <strong id="connectionState">Buscando la computadora de edición…</strong>
+              <p id="connectionDetail">Puedes escribir mientras se establece la conexión.</p>
+            </div>
+            <button id="connectionRetryButton" type="button">Reintentar</button>
+          </section>
 
-    <section class="computerPanel" id="computerPanel" hidden>
-      <div>
-        <strong id="computerTitle">Computadora desconectada</strong>
-        <p id="computerDetail">Los pedidos quedarán esperando hasta que la computadora de Miguel esté encendida.</p>
+          <section class="connectionPanel" id="connectionPanel" hidden aria-labelledby="connectionPanelTitle">
+            <div>
+              <span class="sectionEyebrow">Conexión segura</span>
+              <h2 id="connectionPanelTitle">Computadora de edición</h2>
+              <p id="computerDetail">Comprobando si está disponible…</p>
+            </div>
+            <dl class="healthFacts">
+              <div><dt>Estado</dt><dd id="computerState">Conectando</dd></div>
+              <div><dt>Última señal</dt><dd id="computerLastSeen">Ahora</dd></div>
+            </dl>
+          </section>
+
+          <section class="welcome" id="welcome" aria-labelledby="welcomeTitle">
+            <span class="sectionEyebrow">Tu ayudante para Cursos Bíblicos</span>
+            <h1 id="welcomeTitle">¿Qué quieres mejorar hoy?</h1>
+            <p>Descríbelo con tus propias palabras. Revisaré el proyecto completo, haré el cambio en una copia segura y te mostraré el resultado antes de publicar.</p>
+            <div class="suggestions" role="group" aria-label="Ideas para empezar">
+              <button type="button" data-suggestion="Haz que los títulos de los cursos se vean más grandes y claros en el iPhone.">
+                <span aria-hidden="true">Aa</span><strong>Títulos más claros</strong><small>Mejorar lectura en iPhone</small>
+              </button>
+              <button type="button" data-suggestion="Agrega una forma sencilla de encontrar una lección por su nombre.">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg></span><strong>Buscar lecciones</strong><small>Encontrarlas más rápido</small>
+              </button>
+              <button type="button" data-suggestion="Revisa la app completa y arregla cualquier problema que encuentres en iPhone y iPad.">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"/></svg></span><strong>Revisar la app</strong><small>Comprobar teléfono y tableta</small>
+              </button>
+            </div>
+            <div class="safetyNote">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.8 2.8 8 7 10 4.2-2 7-5.2 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+              <p><strong>Tú tienes la última palabra.</strong> Nada se publica sin que revises y confirmes dos veces.</p>
+            </div>
+          </section>
+
+          <section class="conversation" id="conversation" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversación" tabindex="-1" data-streaming="false"></section>
+
+          <section class="progressCard" id="progressCard" hidden data-event-kind="progress" data-event-status="idle" aria-labelledby="progressTitle">
+            <div class="progressHeader">
+              <span class="progressSpinner" aria-hidden="true"></span>
+              <div>
+                <span class="sectionEyebrow">Trabajo en curso</span>
+                <h2 id="progressTitle">Preparando el proyecto…</h2>
+              </div>
+              <span class="progressTime" id="progressTime"></span>
+            </div>
+            <ol class="progressSteps" id="progressSteps"></ol>
+          </section>
+
+          <section class="approvalRegion" id="approvalRegion" aria-label="Decisiones pendientes"></section>
+
+          <section class="errorCard" id="errorCard" hidden data-event-kind="error" data-event-status="error" role="alert">
+            <span class="errorIcon" aria-hidden="true">!</span>
+            <div>
+              <h2 id="errorTitle">No se pudo terminar</h2>
+              <p id="errorDetail"></p>
+              <button id="retryButton" type="button">Intentar otra vez</button>
+            </div>
+          </section>
+
+          <section class="reviewPanel" id="reviewPanel" hidden aria-labelledby="reviewTitle">
+            <div class="reviewHeading">
+              <div>
+                <span class="sectionEyebrow">Listo para revisar</span>
+                <h2 id="reviewTitle">Resumen del trabajo</h2>
+              </div>
+              <span class="reviewBadge" id="reviewBadge">Sin publicar</span>
+            </div>
+            <p class="reviewSummary" id="reviewSummary"></p>
+
+            <div class="reviewGrid">
+              <article class="reviewCard changesCard">
+                <span class="reviewIcon reviewIconChange" aria-hidden="true">↗</span>
+                <div><strong id="changesSummary">Cambios preparados</strong><p id="changesDetail">Revisa el detalle antes de publicar.</p></div>
+              </article>
+              <article class="reviewCard testsCard" id="testResults" data-event-kind="tests" data-event-status="unknown">
+                <span class="reviewIcon reviewIconTest" aria-hidden="true">✓</span>
+                <div><strong id="testsSummary">Comprobaciones pendientes</strong><p id="testsDetail">Todavía no hay un resultado confirmado.</p></div>
+              </article>
+            </div>
+
+            <a class="previewLink" id="previewLink" href="#" target="_blank" rel="noopener noreferrer" hidden>
+              <span><strong>Abrir vista previa</strong><small>Revisar el cambio en una pestaña nueva</small></span>
+              <span aria-hidden="true">↗</span>
+            </a>
+
+            <details class="diffPanel" id="diffPanel" hidden>
+              <summary>Ver exactamente qué cambió</summary>
+              <div class="diffSummary" id="diffSummary"></div>
+              <pre id="diffContent" tabindex="0" aria-label="Comparación de cambios"></pre>
+            </details>
+
+            <div class="reviewActions">
+              <button class="secondaryAction" id="checksButton" type="button" data-action="checks">Comprobar de nuevo</button>
+              <button class="secondaryAction" id="previewButton" type="button" data-action="preview">Crear vista previa</button>
+            </div>
+            <button class="publishButton" id="publishButton" type="button" data-action="publish">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0-12 4 4m-4-4L8 7M5 13v6h14v-6"/></svg>
+              <span><strong>Publicar cambios</strong><small>Solo después de revisar y confirmar</small></span>
+            </button>
+            <p class="publishRisk">Publicar hace que los cambios estén disponibles para todas las personas que usan Cursos Bíblicos.</p>
+          </section>
+
+          <section class="quickActions" id="quickActions" aria-label="Comprobar o previsualizar la app">
+            <button type="button" data-action="checks">
+              <span class="quickIcon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"/></svg></span>
+              <span><strong>Comprobar la app</strong><small>Buscar errores sin publicar</small></span>
+            </button>
+            <button type="button" data-action="preview">
+              <span class="quickIcon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12s3.3-5 9-5 9 5 9 5-3.3 5-9 5-9-5-9-5Z"/><circle cx="12" cy="12" r="2.5"/></svg></span>
+              <span><strong>Crear vista previa</strong><small>Ver los cambios sin publicarlos</small></span>
+            </button>
+          </section>
+        </main>
       </div>
-      <div class="providerList" id="providerList"></div>
-    </section>
 
-    <section class="quickActions" aria-label="Acciones de la app">
-      <button type="button" data-action="checks"><span><strong>Comprobar</strong><small>Buscar errores</small></span></button>
-      <button type="button" data-action="preview"><span><strong>Vista previa</strong><small>Abrir antes de publicar</small></span></button>
-      <button type="button" class="publishButton" data-action="publish"><span><strong>Publicar</strong><small>Ponerlo en vivo</small></span></button>
-    </section>
-  </main>
-
-  <footer class="composerWrap">
-    <div class="composer">
-      <textarea id="prompt" rows="1" maxlength="12000" enterkeyhint="send" placeholder="Ejemplo: cambia el color de los botones…" aria-label="Describe el cambio"></textarea>
-      <button class="sendButton" id="sendButton" type="button">Enviar</button>
+      <footer class="composerWrap">
+        <form class="composerForm" id="composerForm">
+          <div class="attachmentList" id="attachmentList" role="group" aria-label="Archivos adjuntos"></div>
+          <div class="composer">
+            <button class="attachButton" id="attachButton" type="button" aria-controls="attachmentInput">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8.5 12.5 5.6-5.6a3 3 0 0 1 4.2 4.2l-7.7 7.7a5 5 0 0 1-7.1-7.1l7.4-7.4"/></svg>
+              <span class="srOnly">Adjuntar archivo</span>
+            </button>
+            <input id="attachmentInput" type="file" multiple hidden accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.ppt,.pptx,.ppsx,.txt,.md,.csv,.json,image/jpeg,image/png,image/webp,image/gif,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.presentationml.slideshow,text/plain,text/markdown,text/csv,application/json">
+            <label class="srOnly" for="prompt">Describe el cambio</label>
+            <textarea id="prompt" rows="1" maxlength="12000" enterkeyhint="send" placeholder="¿Qué quieres cambiar?" aria-describedby="composerHint"></textarea>
+            <button class="sendButton" id="sendButton" type="submit" disabled>
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 14-7-4 14-3-6-7-1Z"/></svg>
+              <span>Enviar</span>
+            </button>
+            <button class="stopButton" id="stopButton" type="button" hidden>
+              <span aria-hidden="true"></span><span>Detener</span>
+            </button>
+          </div>
+          <div class="composerMeta">
+            <label class="modeControl" for="mode"><span>Al enviar:</span>
+              <select id="mode" aria-label="Qué debe hacer el ayudante">
+                <option value="edit">Hacer el cambio</option>
+                <option value="plan">Solo revisar y explicar</option>
+              </select>
+            </label>
+            <p id="composerHint">Adjunta hasta 4 imágenes, documentos o presentaciones. Máximo 3 MB por archivo.</p>
+          </div>
+        </form>
+      </footer>
     </div>
-    <div class="composerOptions">
-      <label><span>Modo</span><select id="mode" aria-label="Modo de trabajo"><option value="edit">Hacer el cambio</option><option value="plan">Solo explicarme</option></select></label>
-      <label><span>Ayudante</span><select id="provider" aria-label="Ayudante de código"><option value="auto">Automático</option><option value="codex">Codex</option><option value="kimi">Kimi</option><option value="local">Local sin uso</option></select></label>
-      <button id="cancelButton" type="button" hidden>Detener</button>
-    </div>
-    <p class="homeHint">En iPhone o iPad: Compartir → Agregar a pantalla de inicio.</p>
-  </footer>
+  </div>
 </div>
 
-<dialog id="publishDialog">
-  <form method="dialog">
-    <h2>¿Publicar la app?</h2>
-    <p>Primero se comprobará todo. Si funciona bien, los cambios se pondrán en vivo para todos.</p>
-    <div class="dialogActions"><button value="cancel">Todavía no</button><button class="confirmPublish" value="publish">Sí, publicar</button></div>
+<dialog class="publishDialog" id="publishDialog" aria-labelledby="publishDialogTitle">
+  <form method="dialog" id="publishForm">
+    <button class="dialogClose" value="cancel" aria-label="Cerrar">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>
+    </button>
+    <span class="dialogMark" aria-hidden="true">↑</span>
+    <h2 id="publishDialogTitle">Confirmar publicación</h2>
+    <p id="publishDialogSummary">Se harán comprobaciones finales antes de poner los cambios en vivo.</p>
+    <div class="publishWarning">
+      <strong>Esto sí cambia la app para todos.</strong>
+      <span>Si una comprobación falla, la publicación se detendrá.</span>
+    </div>
+    <label class="publishAcknowledge">
+      <input id="publishAcknowledge" type="checkbox">
+      <span>Ya revisé el resumen y quiero publicar estos cambios.</span>
+    </label>
+    <div class="dialogActions">
+      <button value="cancel">Volver a revisar</button>
+      <button class="confirmPublish" id="confirmPublishButton" value="publish" disabled>Sí, publicar ahora</button>
+    </div>
   </form>
 </dialog>
 
+<div class="srOnly" id="liveAnnouncer" aria-live="assertive" aria-atomic="true"></div>
 <script src="edit.js"></script>
 </body>
 </html>
