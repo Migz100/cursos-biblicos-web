@@ -14,7 +14,7 @@ const REPO_ROOT = realDirectory(requiredEnv('CODE_REPO_ROOT'));
 const STATE_DIR = path.join(HOST_ROOT, 'state');
 const STATE_FILE = path.join(STATE_DIR, 'state.json');
 const WORK_ROOT = path.join(HOST_ROOT, 'work');
-const VERSION = '2.0.1';
+const VERSION = '2.0.2';
 
 const BASE_URL = requiredEnv('CODE_RELAY_BASE_URL').replace(/\/$/, '');
 const HOST_TOKEN = requiredEnv('CODE_HOST_TOKEN');
@@ -24,7 +24,7 @@ const EXPECTED_VERCEL_PROJECT_ID = requiredEnv('CODE_EXPECTED_VERCEL_PROJECT_ID'
 const EXPECTED_VERCEL_ORG_ID = requiredEnv('CODE_EXPECTED_VERCEL_ORG_ID');
 const SUPPORT_LIBRARY = realDirectory(process.env.CODE_SUPPORT_LIBRARY || 'N:\\projects\\personal\\Personal\\Cursos Biblicos');
 const LOCAL_MODEL = process.env.CODE_LOCAL_MODEL || 'qwen3.8:27b-q8_0';
-const PROVIDER_ORDER = (process.env.CODE_PROVIDER_ORDER || 'codex,kimi,local').split(',').map(item => item.trim()).filter(Boolean);
+const PROVIDER_ORDER = (process.env.CODE_PROVIDER_ORDER || 'codex,local').split(',').map(item => item.trim()).filter(Boolean);
 const POLL_MS = boundedNumber(process.env.CODE_POLL_MS, 2500, 1000, 30000);
 const HEARTBEAT_MS = boundedNumber(process.env.CODE_HEARTBEAT_MS, 30000, 15000, 120000);
 const MAX_JOB_MS = boundedNumber(process.env.CODE_MAX_JOB_MS, 45 * 60 * 1000, 60_000, 2 * 60 * 60 * 1000);
@@ -223,16 +223,13 @@ function probe(command, args, accepted = () => true, timeout = 15000) {
 
 function probeProviders() {
   const codex = probe(COMMANDS.codex, ['login', 'status'], output => /logged in|chatgpt|api key/i.test(output));
-  const kimi = probe(COMMANDS.kimi, ['provider', 'list'], output => /kimi|managed|oauth|default/i.test(output));
   const local = probe(COMMANDS.ollama, ['list'], output => output.includes(LOCAL_MODEL));
-  const claudeDisabled = String(process.env.CODE_DISABLE_CLAUDE || '').trim();
   const fuguDisabled = String(process.env.CODE_DISABLE_FUGU || '').trim();
-  const claude = claudeDisabled ? { ok: false } : probe(COMMANDS.claude, ['auth', 'status'], output => /loggedIn.*true|logged in/i.test(output));
   return [
     provider('codex', 'Codex', codex.ok, codex.ok ? '' : 'La sesión de Codex necesita atención.'),
-    provider('kimi', 'Kimi', kimi.ok, kimi.ok ? '' : 'Kimi necesita iniciar sesión.'),
+    provider('kimi', 'Kimi', false, 'Desactivado: este proveedor no ofrece un aislamiento de archivos verificable en este host.'),
     provider('local', 'Local', local.ok, local.ok ? '' : `No se encontró ${LOCAL_MODEL} en Ollama.`),
-    provider('claude', 'Claude', claude.ok, claudeDisabled || (claude.ok ? '' : 'Claude no está disponible.')),
+    provider('claude', 'Claude', false, 'Desactivado: este proveedor no ofrece un aislamiento de archivos verificable en este host.'),
     provider('fugu', 'Fugu', false, fuguDisabled || 'Fugu no está disponible.')
   ];
 }
@@ -560,9 +557,11 @@ async function runOneProvider(id, mode, promptText, sink, workDir) {
 }
 
 async function runCodex(promptText, mode, sink, workDir, local) {
-  const args = ['exec', '--json', '--color', 'never', '--ephemeral', '--skip-git-repo-check'];
-  if (mode === 'plan') args.push('--sandbox', 'read-only');
-  else args.push('--approve-for-me');
+  const args = [
+    'exec', '--json', '--color', 'never', '--ephemeral', '--skip-git-repo-check',
+    '--ignore-user-config', '--sandbox', mode === 'plan' ? 'read-only' : 'workspace-write',
+    '-c', 'approval_policy="never"'
+  ];
   args.push('-C', workDir);
   if (local) args.push('--oss', '--local-provider', 'ollama', '--model', LOCAL_MODEL);
   args.push('-');

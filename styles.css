@@ -50,11 +50,11 @@ nav .spacer { flex: 1; }
 /* Hero */
 .hero { padding: 44px 0 8px; }
 .hero h1 { font-size: 40px; font-weight: 700; letter-spacing: -1.1px; line-height: 1.1; }
-.hero p { color: var(--text2); font-size: 17px; margin-top: 8px; letter-spacing: -0.2px; }
+.hero p { color: var(--text2); font-size: 18px; margin-top: 8px; letter-spacing: -0.2px; }
 .dlBtn {
   display: inline-flex; align-items: center; gap: 8px;
-  margin-top: 18px; padding: 11px 20px; border-radius: 980px;
-  background: var(--accent); color: #fff; font-size: 16px; font-weight: 500;
+  min-height: 48px; margin-top: 18px; padding: 11px 20px; border-radius: 980px;
+  background: #0068D1; color: #fff; font-size: 17px; font-weight: 650;
   text-decoration: none; letter-spacing: -0.2px;
 }
 .dlBtn[hidden] { display: none; }
@@ -62,7 +62,9 @@ nav .spacer { flex: 1; }
 .dlBtn.ghost { background: #E9E9EB; color: var(--text); margin-left: 10px; }
 .courseHead { padding: 22px 0 4px; }
 .courseTitle { margin: 22px 0 0; font-size: clamp(28px, 5vw, 40px); line-height: 1.08; letter-spacing: -0.8px; }
-.archiveNote { max-width: 560px; color: var(--text2); font-size: 13px !important; margin-top: 9px !important; }
+.archiveNote { max-width: 620px; color: var(--text2); font-size: 16px !important; line-height: 1.55; margin-top: 9px !important; }
+.statusLine { min-height: 29px; margin-top: 14px; color: var(--text2); font-size: 17px; }
+.statusLine.error { color: #A51D1D; font-weight: 650; }
 .courseCover {
   width: 100%; aspect-ratio: 4 / 3; max-height: 500px; margin-top: 24px;
   border-radius: var(--radius); background-color: #fff; background-position: center;
@@ -277,22 +279,50 @@ input[type=search]:focus { border-color: var(--focus); background: #fff; }
 .presentationStage iframe { width: 100%; height: 100%; border: 0; background: #fff; }
 .presentationStatus {
   position: absolute; inset: 0; display: grid; place-items: center;
-  background: #F5F5F7; color: var(--text2); font-size: 16px; z-index: 2;
+  background: #F5F5F7; color: var(--text2); font-size: 18px; z-index: 2;
 }
 .presentationFallback {
   position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
   width: min(520px, calc(100% - 28px)); padding: 12px 16px; border-radius: 12px;
   display: flex; flex-wrap: wrap; gap: 4px 8px; justify-content: center;
-  background: rgba(255,255,255,0.94); color: var(--text2); font-size: 13px; text-align: center;
+  background: rgba(255,255,255,0.96); color: var(--text2); font-size: 16px; line-height: 1.45; text-align: center;
   box-shadow: 0 4px 24px rgba(0,0,0,0.2); z-index: 3;
 }
 .presentationFallback strong { color: var(--text); }
 .presentationStatus[hidden], .presentationFallback[hidden], .presentationStage iframe[hidden] { display: none; }
 .presentationStage:fullscreen { background: #000; }
+.presentationTranscript {
+  position: absolute; inset: 0 0 0 auto; z-index: 5; width: min(620px, 100%);
+  overflow: auto; overscroll-behavior: contain; padding: 0 22px 32px;
+  background: #fff; color: var(--text); box-shadow: -8px 0 30px rgba(0,0,0,0.28);
+}
+.presentationTranscript[hidden] { display: none; }
+.transcriptHeader {
+  position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; margin: 0 -22px 18px; padding: 18px 22px 14px; background: rgba(255,255,255,0.97);
+  border-bottom: 1px solid var(--line);
+}
+.transcriptHeader h2 { margin: 0 0 4px; font-size: 28px; line-height: 1.2; }
+.transcriptHeader p { margin: 0; color: var(--text2); font-size: 17px; line-height: 1.5; }
+.transcriptSlides { display: grid; gap: 12px; }
+.slideTranscript { border: 1px solid #C8C8CE; border-radius: 12px; background: #fff; }
+.slideTranscript summary {
+  min-height: 48px; display: flex; align-items: center; padding: 10px 14px; cursor: pointer;
+  color: var(--text); font-size: 18px; font-weight: 760; line-height: 1.35;
+}
+.slideTranscriptBody { padding: 0 14px 16px; }
+.slideTranscriptText { margin: 0; white-space: pre-line; color: var(--text); font-size: 18px; line-height: 1.65; }
+.slideTranscriptEmpty { color: var(--text2); }
+.slideReferences { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.slideVerseButton {
+  min-height: 44px; padding: 8px 12px; border: 2px solid #0759B8; border-radius: 10px;
+  background: #EAF3FF; color: #003F86; font: inherit; font-size: 17px; font-weight: 760; cursor: pointer;
+}
+.slideVerseButton:hover { background: #D9EAFF; }
 
 @media (max-width: 520px) {
-  .hero h1 { font-size: 32px; }
-  .navBtn { min-width: 64px; padding: 7px 10px; }
+  .hero h1 { font-size: 34px; }
+  .navBtn { min-width: 64px; padding: 8px 10px; }
   .readerNav .count { display: none; }
   .readerNav { padding: 0 8px; gap: 6px; }
   .readerNav .navBtn { min-width: 0; padding: 8px 9px; font-size: 14px; }
@@ -314,6 +344,19 @@ input[type=search]:focus { border-color: var(--focus); background: #fff; }
   .fileKind { display: none; }
   .presentationNav { height: auto; min-height: 56px; padding: 7px 8px; gap: 6px; flex-wrap: wrap; }
   .presentationNav .title { flex-basis: calc(100% - 78px); }
-  .presentationNav .navBtn { min-width: 0; padding: 7px 9px; font-size: 12px; }
+  .presentationNav .navBtn { min-width: 0; padding: 8px 9px; font-size: 14px; }
   .presentationBack { min-width: 68px !important; }
+  .presentationTranscript { width: 100%; padding: 0 16px 28px; }
+  .transcriptHeader { margin-inline: -16px; padding-inline: 16px; }
+  .transcriptHeader h2 { font-size: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
+
+@media (prefers-contrast: more) {
+  :root { --text2: #303034; --focus: #003F91; }
+  .card, .lessonGroup { border: 1px solid #777; }
+  .answerField { background: rgba(255,255,255,0.82); border-color: #004F9E; }
 }

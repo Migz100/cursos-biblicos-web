@@ -5,3 +5,11 @@ node_modules/
 .code-host/
 .code-host.env
 .vercel
+
+# Local audit: never version temporary profiles or screenshots.
+work/evidence/
+work/tmp/
+work/browser-profiles/
+work/*-browser-profile/
+work/agent-*.json
+work/agent-*.md

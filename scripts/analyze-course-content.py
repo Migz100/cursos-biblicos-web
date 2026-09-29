@@ -122,25 +122,10 @@ def safe_name(value: str) -> str:
     return value[:80] or "archivo"
 
 
-def local_course_folders(source_root: Path) -> dict[int, Path]:
-    result = {}
-    for folder in source_root.iterdir():
-        if not folder.is_dir() or "(anterior)" in folder.name.lower():
-            continue
-        match = re.match(r"(\d{2})\s", folder.name)
-        if match:
-            result[int(match.group(1))] = folder
-    return result
-
-
-def resolve_lesson_path(course: dict, lesson: dict, source_root: Path, cache: Path) -> Path:
-    course_id = str(course["id"])
-    if course_id.isdigit() and 1 <= int(course_id) <= 12:
-        number = lesson_number(lesson)
-        folder = local_course_folders(source_root).get(int(course_id))
-        candidate = folder / f"Lección {number:02d}.pdf" if folder and number is not None else None
-        if candidate and candidate.exists():
-            return candidate
+def resolve_lesson_path(course: dict, lesson: dict, cache: Path) -> Path:
+    # A catalog fingerprint must describe the bytes at the catalog URL. A local
+    # source file may have the same lesson number while being a different
+    # edition, so it must never stand in for the deployed asset here.
     extension = lesson.get("type", "bin")
     name = f"{safe_name(course['name'])}-{safe_name(lesson['title'])}-{hashlib.sha1(lesson['url'].encode()).hexdigest()[:10]}.{extension}"
     return download(lesson["url"], cache / "downloads" / name)
@@ -375,7 +360,7 @@ def main() -> None:
         for lesson in course.get("lessons", []):
             processed += 1
             try:
-                path = resolve_lesson_path(course, lesson, args.source_root, args.work_dir)
+                path = resolve_lesson_path(course, lesson, args.work_dir)
                 digest = sha256(path)
                 pages = None
                 content_hash = None

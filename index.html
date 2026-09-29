@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<nav><div class="inner"><span class="brand" id="brand">Cursos Bíblicos</span><span class="spacer"></span><a class="manageLink" href="admin/">Administrar</a></div></nav>
+<nav aria-label="Navegación principal"><div class="inner"><span class="brand" id="brand">Cursos Bíblicos</span><span class="spacer"></span><a class="manageLink" href="admin/">Administrar</a></div></nav>
 <main>
   <div class="hero">
     <h1 id="h1"></h1>
@@ -19,12 +19,14 @@
     <a class="dlBtn" id="dlBtn" download hidden>Descargar catálogo original (ZIP)</a>
     <p class="archiveNote" id="archiveNote" hidden>Este ZIP conserva el catálogo inicial. Los cambios nuevos se descargan por lección.</p>
   </div>
+  <p class="statusLine" id="catalogStatus" role="status">Cargando cursos...</p>
   <div class="searchWrap">
+    <label class="srOnly" for="search">Buscar cursos</label>
     <svg class="glass" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="#1D1D1F" stroke-width="1.6"/><line x1="10.8" y1="10.8" x2="15" y2="15" stroke="#1D1D1F" stroke-width="1.6" stroke-linecap="round"/></svg>
-    <input type="search" id="search" placeholder="Buscar curso" autocomplete="off">
+    <input type="search" id="search" placeholder="Buscar curso" autocomplete="off" aria-controls="sections">
   </div>
   <div id="sections"></div>
-  <div class="empty" id="empty" style="display:none">Ningún curso coincide con "0".</div>
+  <div class="empty" id="empty" role="status" hidden></div>
 </main>
 <script src="site.js"></script>
 </body>

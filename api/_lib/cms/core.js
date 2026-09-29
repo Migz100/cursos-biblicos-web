@@ -376,12 +376,14 @@ function applyMutation(input, action) {
         throw new CmsError(409, 'LESSON_LIMIT', 'La cantidad de lecciones no es válida.');
       }
       const previousLessons = course.lessons;
-      course.lessons = requestedLessons.map((item, index) => ({
+      const nextLessons = requestedLessons.map((item, index) => ({
         id: previousLessons[index]?.id || `l_${crypto.randomUUID()}`,
         legacyNumber: previousLessons[index]?.legacyNumber || null,
         title: cleanText(item.title, 100, 'El título de la lección'),
         ...requireAsset(item.asset)
       }));
+      addTrash(manifest, { kind: 'replaced_lessons', courseId: course.id, item: previousLessons });
+      course.lessons = nextLessons;
       label = `Lecciones reemplazadas en ${course.name}`;
       break;
     }
@@ -407,6 +409,23 @@ function applyMutation(input, action) {
       const index = Math.max(0, Math.min(entry.index, manifest.courses.length));
       manifest.courses.splice(index, 0, entry.item);
       label = `Curso restaurado: ${entry.item.name}`;
+      break;
+    }
+    case 'course.restoreLessons': {
+      const trashIndex = manifest.trash.findIndex(item => item.id === String(action.trashId) && item.kind === 'replaced_lessons');
+      if (trashIndex < 0) throw new CmsError(404, 'TRASH_NOT_FOUND', 'Ese conjunto de lecciones ya no está en la papelera.');
+      const entry = manifest.trash[trashIndex];
+      const course = findCourse(manifest, entry.courseId);
+      const previousLessons = Array.isArray(entry.item) ? entry.item : [];
+      const nextTotal = totalLessons(manifest) - course.lessons.length + previousLessons.length;
+      if (!previousLessons.length || previousLessons.length > MAX_LESSONS_PER_COURSE || nextTotal > MAX_TOTAL_LESSONS) {
+        throw new CmsError(409, 'LESSON_LIMIT', 'No hay espacio para restaurar todas las lecciones.');
+      }
+      const currentLessons = course.lessons;
+      manifest.trash.splice(trashIndex, 1);
+      addTrash(manifest, { kind: 'replaced_lessons', courseId: course.id, item: currentLessons });
+      course.lessons = previousLessons;
+      label = `Conjunto de lecciones anterior restaurado: ${course.name}`;
       break;
     }
     case 'lesson.add': {

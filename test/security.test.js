@@ -39,6 +39,12 @@ test('an existing valid CSRF cookie is reused across tabs', () => {
   assert.equal(existingCsrfToken(request({ cookie: 'cb_csrf=too-short' })), null);
 });
 
+test('malformed cookie encoding is rejected without crashing the function', () => {
+  const malformed = request({ cookie: 'other=ok; cb_csrf=%E0%A4%A', 'x-csrf-token': newCsrfToken() });
+  assert.equal(existingCsrfToken(malformed), null);
+  assert.throws(() => requireCsrf(malformed), error => error.status === 403 && error.code === 'CSRF_DENIED');
+});
+
 test('cross-site, missing-origin, and mismatched CSRF requests are denied', () => {
   assert.throws(() => requireSameOrigin(request({ origin: 'https://evil.example' })), error => error.status === 403);
   assert.throws(() => requireSameOrigin(request({ origin: '' })), error => error.status === 403);

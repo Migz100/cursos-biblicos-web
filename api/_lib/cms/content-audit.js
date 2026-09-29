@@ -23,9 +23,41 @@ function knownRecord(course, lesson) {
   );
 }
 
+function positiveSize(value) {
+  const size = Number(value);
+  return Number.isSafeInteger(size) && size > 0 ? size : null;
+}
+
+function compatibleKnownRecord(course, lesson) {
+  const record = knownRecord(course, lesson);
+  if (!record) return { record: null, issue: null };
+
+  const currentSize = positiveSize(lesson.size);
+  if (currentSize === null) return { record, issue: null };
+
+  const baselineSize = positiveSize(record.size);
+  if (baselineSize === currentSize) return { record, issue: null };
+
+  return {
+    record: null,
+    issue: {
+      reason: baselineSize === null ? 'baseline-size-missing' : 'baseline-size-mismatch',
+      baselineSize,
+      currentSize
+    }
+  };
+}
+
 function catalogRecords(manifest) {
   return manifest.courses.flatMap(course => course.lessons.map(lesson => {
-    const known = knownRecord(course, lesson) || {};
+    const baseline = compatibleKnownRecord(course, lesson);
+    const known = baseline.record || {};
+    const sha256 = lesson.sha256 || known.sha256 || null;
+    const fingerprintIssue = baseline.issue || (!sha256 ? {
+      reason: 'missing-fingerprint',
+      baselineSize: null,
+      currentSize: positiveSize(lesson.size)
+    } : null);
     return {
       courseId: course.id,
       courseName: course.name,
@@ -33,13 +65,14 @@ function catalogRecords(manifest) {
       title: lesson.title,
       type: lesson.type,
       url: lesson.url,
-      sha256: lesson.sha256 || known.sha256 || null,
+      sha256,
       contentHash: lesson.contentHash || known.contentHash || null,
       contentCharacters: lesson.contentCharacters || known.contentCharacters || 0,
       pages: known.pages || null,
       originalName: lesson.originalName,
       conversionStatus: lesson.conversionStatus || null,
-      sourceType: lesson.sourceType || null
+      sourceType: lesson.sourceType || null,
+      fingerprintIssue
     };
   }));
 }
@@ -139,6 +172,13 @@ function auditManifest(manifest) {
   }
   const pagesPending = records.filter(record => record.type === 'pages' || record.conversionStatus === 'needs-pdf');
   const fingerprinted = records.filter(record => record.sha256).length;
+  const fingerprintIssues = records.filter(record => record.fingerprintIssue).map(record => ({
+    courseId: record.courseId,
+    courseName: record.courseName,
+    lessonId: record.lessonId,
+    title: record.title,
+    ...record.fingerprintIssue
+  }));
   return {
     generatedAt: new Date().toISOString(),
     summary: {
@@ -152,13 +192,14 @@ function auditManifest(manifest) {
     },
     duplicates: [...exact, ...content],
     ordering,
+    fingerprintIssues,
     pagesPending: pagesPending.map(record => ({
       courseId: record.courseId,
       courseName: record.courseName,
       lessonId: record.lessonId,
       title: record.title
     })),
-    healthy: exact.length === 0 && content.length === 0 && ordering.length === 0 && pagesPending.length === 0,
+    healthy: exact.length === 0 && content.length === 0 && ordering.length === 0 && pagesPending.length === 0 && fingerprintIssues.length === 0,
     baselineGeneratedAt: knownContent.generatedAt
   };
 }

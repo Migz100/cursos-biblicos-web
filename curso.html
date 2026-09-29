@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<nav><div class="inner">
+<nav aria-label="Navegación del curso"><div class="inner">
   <a class="back" href="index.html">Inicio</a>
   <span class="brand" style="flex:1;text-align:center" id="title"></span>
   <a class="manageLink" href="admin/">Administrar</a>
@@ -23,7 +23,7 @@
     <a class="dlBtn ghost" id="dlPpt" hidden>Descargar originales iniciales (PPTX)</a>
     <p class="archiveNote" id="courseArchiveNote" hidden>Este ZIP conserva la versión inicial. Los cambios nuevos se descargan por lección.</p>
   </div>
-  <div class="lessonGroup" id="list"></div>
+  <div class="lessonGroup" id="list"><p class="empty" id="courseStatus" role="status">Cargando lecciones...</p></div>
 </main>
 <script src="course.js"></script>
 </body>

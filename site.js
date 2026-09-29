@@ -5,6 +5,13 @@ const SECTIONS = [
 ];
 let DATA = null;
 
+function searchKey(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es');
+}
+
 function textElement(tag, className, text) {
   const element = document.createElement(tag);
   if (className) element.className = className;
@@ -82,11 +89,11 @@ function render(courses) {
   const empty = document.getElementById('empty');
   wrap.replaceChildren();
   if (!courses.length) {
-    empty.style.display = '';
+    empty.hidden = false;
     empty.textContent = `Ningún curso coincide con "${document.getElementById('search').value}".`;
     return;
   }
-  empty.style.display = 'none';
+  empty.hidden = true;
   for (const section of SECTIONS) {
     const list = courses.filter(course => (course.section || 'cursos') === section.id);
     if (!list.length) continue;
@@ -115,15 +122,21 @@ async function load() {
     });
   }
   render(DATA.courses);
+  document.getElementById('catalogStatus').hidden = true;
 }
 
 document.getElementById('search').addEventListener('input', event => {
-  const query = event.target.value.trim().toLocaleLowerCase('es');
+  if (!DATA) return;
+  const query = searchKey(event.target.value.trim());
   render(DATA.courses.filter(course =>
-    course.name.toLocaleLowerCase('es').includes(query) || course.short.toLocaleLowerCase('es').includes(query)
+    searchKey(course.name).includes(query) || searchKey(course.short).includes(query)
   ));
 });
 
 load().catch(() => {
+  document.getElementById('h1').textContent = 'Cursos Bíblicos';
+  const status = document.getElementById('catalogStatus');
+  status.classList.add('error');
+  status.textContent = 'No se pudo cargar el catálogo. Intenta recargar la página.';
   document.getElementById('sections').replaceChildren(textElement('p', 'empty', 'No se pudo cargar el catálogo. Intenta recargar la página.'));
 });

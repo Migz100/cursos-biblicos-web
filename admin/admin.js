@@ -483,11 +483,29 @@ function restoreLine(entry) {
   const copy = document.createElement('div');
   copy.className = 'restoreCopy';
   const name = document.createElement('strong');
-  name.textContent = entry.item.name || entry.item.title || entry.item.originalName || 'Portada anterior';
+  name.textContent = entry.kind === 'replaced_lessons'
+    ? 'Conjunto anterior de lecciones'
+    : entry.item.name || entry.item.title || entry.item.originalName || 'Portada anterior';
   const detail = document.createElement('span');
-  detail.textContent = entry.kind === 'course' ? 'Curso' : entry.kind === 'lesson' ? 'Lección' : entry.kind === 'replaced_cover' ? 'Portada reemplazada' : 'Archivo reemplazado';
+  detail.textContent = entry.kind === 'course'
+    ? 'Curso'
+    : entry.kind === 'lesson'
+      ? 'Lección'
+      : entry.kind === 'replaced_cover'
+        ? 'Portada reemplazada'
+        : entry.kind === 'replaced_lessons'
+          ? `${entry.item.length} lecciones reemplazadas`
+          : 'Archivo reemplazado';
   copy.append(name, detail);
-  const actionType = entry.kind === 'course' ? 'course.restore' : entry.kind === 'lesson' ? 'lesson.restore' : entry.kind === 'replaced_cover' ? 'cover.restore' : 'asset.restore';
+  const actionType = entry.kind === 'course'
+    ? 'course.restore'
+    : entry.kind === 'lesson'
+      ? 'lesson.restore'
+      : entry.kind === 'replaced_cover'
+        ? 'cover.restore'
+        : entry.kind === 'replaced_lessons'
+          ? 'course.restoreLessons'
+          : 'asset.restore';
   line.append(copy, button('Restaurar', 'secondaryAction', `Restaurar ${name.textContent}`, () => {
     mutate({ type: actionType, trashId: entry.id }).then(openTrash).catch(() => {});
   }));
@@ -611,10 +629,27 @@ async function openAudit() {
     })));
   }
 
+  const fingerprintIssues = audit.fingerprintIssues || [];
+  if (fingerprintIssues.length) {
+    body.appendChild(auditSection('Huellas de contenido por actualizar', fingerprintIssues.map(item => {
+      const line = document.createElement('div');
+      line.className = 'auditIssue stacked';
+      const strong = document.createElement('strong');
+      strong.textContent = item.title;
+      const span = document.createElement('span');
+      const sizes = Number.isSafeInteger(item.baselineSize) && Number.isSafeInteger(item.currentSize)
+        ? ` El archivo actual pesa ${item.currentSize.toLocaleString('es')} bytes y la referencia anterior ${item.baselineSize.toLocaleString('es')} bytes.`
+        : '';
+      span.textContent = `${item.courseName}. La referencia guardada no demuestra el contenido del archivo actual.${sizes}`;
+      line.append(strong, span);
+      return line;
+    })));
+  }
+
   if (audit.healthy) {
     const note = document.createElement('p');
     note.className = 'auditHealthyNote';
-    note.textContent = 'No se encontraron duplicados, archivos Pages pendientes ni lecciones fuera de orden.';
+    note.textContent = 'No se encontraron duplicados, huellas pendientes, archivos Pages pendientes ni lecciones fuera de orden.';
     body.appendChild(note);
   }
 }

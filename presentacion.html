@@ -11,14 +11,15 @@
 </head>
 <body>
 <div class="presentationViewer">
-  <div class="readerNav presentationNav">
+  <nav class="readerNav presentationNav" aria-label="Navegación de la presentación">
     <a class="navBtn ghost presentationBack" id="back" href="index.html">Curso</a>
     <div class="title" id="title">Cargando presentación...</div>
     <button class="navBtn" id="fullScreen" type="button">Pantalla completa</button>
-    <a class="navBtn ghost" id="openViewer" target="_blank" rel="noopener" hidden>Abrir</a>
+    <a class="navBtn ghost" id="openViewer" target="_blank" rel="noopener" hidden>Abrir aparte</a>
+    <button class="navBtn ghost" id="openTranscript" type="button" aria-controls="presentationTranscript" aria-expanded="false" hidden>Texto y citas</button>
     <button class="navBtn ghost" id="download" type="button" disabled>Descargar</button>
-  </div>
-  <div class="presentationStage" id="stage">
+  </nav>
+  <main class="presentationStage" id="stage">
     <div class="presentationStatus" id="status" role="status">Preparando la presentación...</div>
     <iframe
       id="presentationFrame"
@@ -32,8 +33,19 @@
       <strong>No se pudo mostrar la presentación.</strong>
       <span>Puedes abrir el visor en otra pestaña o descargar el archivo.</span>
     </div>
-  </div>
+    <aside class="presentationTranscript" id="presentationTranscript" role="dialog" aria-modal="true" aria-labelledby="transcriptTitle" hidden>
+      <header class="transcriptHeader">
+        <div>
+          <h2 id="transcriptTitle">Texto y citas b&iacute;blicas</h2>
+          <p id="transcriptSummary">Texto accesible de cada diapositiva.</p>
+        </div>
+        <button class="wBtn" id="closeTranscript" type="button">Cerrar</button>
+      </header>
+      <div class="transcriptSlides" id="transcriptSlides"></div>
+    </aside>
+  </main>
 </div>
+<script src="verses.js"></script>
 <script src="presentation.js"></script>
 </body>
 </html>

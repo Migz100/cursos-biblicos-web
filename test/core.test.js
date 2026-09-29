@@ -160,7 +160,16 @@ test('whole-course lesson replacement is atomic and preserves every other course
   assert.equal(course.lessons[0].id, original.courses[0].lessons[0].id);
   assert.equal(course.lessons[0].legacyNumber, original.courses[0].lessons[0].legacyNumber);
   assert.equal(JSON.stringify(result.manifest.courses.slice(1)), untouched);
-  assert.equal(result.manifest.trash.length, 0);
+  assert.equal(result.manifest.trash.length, 1);
+  assert.equal(result.manifest.trash[0].kind, 'replaced_lessons');
+  assert.equal(result.manifest.trash[0].item.length, 20);
+  const restored = applyMutation(result.manifest, {
+    type: 'course.restoreLessons', trashId: result.manifest.trash[0].id
+  }).manifest;
+  assert.deepEqual(restored.courses[0].lessons, original.courses[0].lessons);
+  assert.equal(restored.trash.length, 1);
+  assert.equal(restored.trash[0].kind, 'replaced_lessons');
+  assert.deepEqual(restored.trash[0].item.map(item => item.title), ['Primera nueva', 'Segunda nueva']);
   assert.equal(original.courses[0].lessons.length, 20);
   assert.throws(() => applyMutation(original, {
     type: 'course.replaceLessons', courseId: '1', confirmText: 'otro', lessons: [{ title: 'Uno', asset: asset() }]

@@ -42,7 +42,10 @@ function lessonRow(course, lesson, index) {
     : isPresentation
       ? `presentacion.html?c=${encodeURIComponent(course.id)}&l=${encodeURIComponent(lesson.id)}`
       : lesson.downloadUrl || lesson.url;
-  if (lesson.type !== 'pdf' && !isPresentation) open.target = '_blank';
+  if (lesson.type !== 'pdf' && !isPresentation) {
+    open.target = '_blank';
+    open.rel = 'noopener noreferrer';
+  }
 
   const number = document.createElement('div');
   number.className = 'num';
@@ -135,6 +138,7 @@ async function load() {
     };
   }
   const list = document.getElementById('list');
+  list.replaceChildren();
   course.lessons.forEach((lesson, index) => list.appendChild(lessonRow(course, lesson, index)));
   if (!course.lessons.length) {
     const empty = document.createElement('p');
@@ -146,5 +150,9 @@ async function load() {
 
 load().catch(() => {
   const list = document.getElementById('list');
-  list.textContent = 'No se pudo cargar el curso. Intenta recargar la página.';
+  const message = document.createElement('p');
+  message.className = 'empty';
+  message.setAttribute('role', 'status');
+  message.textContent = 'No se pudo cargar el curso. Intenta recargar la página.';
+  list.replaceChildren(message);
 });

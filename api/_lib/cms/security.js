@@ -39,7 +39,9 @@ function parseCookies(header = '') {
   return Object.fromEntries(String(header).split(';').map(item => {
     const index = item.indexOf('=');
     if (index < 0) return ['', ''];
-    return [item.slice(0, index).trim(), decodeURIComponent(item.slice(index + 1).trim())];
+    const key = item.slice(0, index).trim();
+    try { return [key, decodeURIComponent(item.slice(index + 1).trim())]; }
+    catch { return ['', '']; }
   }).filter(([key]) => key));
 }
 

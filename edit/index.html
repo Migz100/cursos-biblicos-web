@@ -68,12 +68,12 @@
 
   <footer class="composerWrap">
     <div class="composer">
-      <textarea id="prompt" rows="1" maxlength="12000" enterkeyhint="send" placeholder="Ejemplo: cambia el color de los botones…" aria-label="Describe el cambio"></textarea>
+      <textarea id="prompt" rows="1" maxlength="12000" enterkeyhint="send" placeholder="Describe el cambio…" aria-label="Describe el cambio"></textarea>
       <button class="sendButton" id="sendButton" type="button">Enviar</button>
     </div>
     <div class="composerOptions">
       <label><span>Modo</span><select id="mode" aria-label="Modo de trabajo"><option value="edit">Hacer el cambio</option><option value="plan">Solo explicarme</option></select></label>
-      <label><span>Ayudante</span><select id="provider" aria-label="Ayudante de código"><option value="auto">Automático</option><option value="codex">Codex</option><option value="kimi">Kimi</option><option value="local">Local sin uso</option></select></label>
+      <label><span>Ayudante</span><select id="provider" aria-label="Ayudante de código"><option value="auto">Automático</option><option value="codex">Codex</option><option value="kimi" disabled>Kimi (sin aislamiento)</option><option value="local">Local sin uso</option></select></label>
       <button id="cancelButton" type="button" hidden>Detener</button>
     </div>
     <p class="homeHint">En iPhone o iPad: Compartir → Agregar a pantalla de inicio.</p>
