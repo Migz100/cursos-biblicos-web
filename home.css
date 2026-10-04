@@ -80,6 +80,18 @@ body .catalogActions #dlBtn.catalogArchive::before { width: 16px; height: 16px; 
 .catalogDownloadInfo { margin-top: -6px; }
 .catalogDownloadStatus { padding: 10px 14px; border-radius: 12px; background: #EBF3FF; color: #315376; }
 
+.homeTutorial {
+  margin-top: 24px; padding: 20px; border: 1px solid #E4E7EC; border-radius: var(--radius);
+  background: var(--card); text-align: center;
+}
+.homeTutorial h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+.homeTutorial p { margin-top: 6px; color: #626870; font-size: 15px; line-height: 1.45; }
+.homeTutorial video {
+  display: block; width: 100%; max-width: 280px; height: auto; margin: 16px auto 0;
+  aspect-ratio: 9 / 16; border-radius: 14px; background: #111;
+}
+.homeTutorial video:focus-visible { outline: 3px solid #0071E3; outline-offset: 3px; }
+
 .homeHelp {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
   margin-top: 24px; padding: 18px; border: 1px solid #E4E7EC; border-radius: var(--radius); background: var(--card);
