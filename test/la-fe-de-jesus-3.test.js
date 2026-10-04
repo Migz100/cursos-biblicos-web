@@ -23,7 +23,7 @@ test('La Fe de Jesús 3 is added once, after the existing courses, without chang
 test('La Fe de Jesús 3 lists 20 readable PDF lessons that keep the source file for download', () => {
   const course = LA_FE_DE_JESUS_3;
   assert.equal(course.name, 'La Fe de Jesús 3');
-  assert.equal(course.section, 'lafe');
+  assert.equal(course.section, 'cursos');
   assert.ok(fs.existsSync(path.join(root, course.coverUrl)));
   assert.equal(course.lessons.length, 20);
   course.lessons.forEach((lesson, index) => {

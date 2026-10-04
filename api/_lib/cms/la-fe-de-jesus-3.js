@@ -34,7 +34,7 @@ const course = Object.freeze({
   name: 'La Fe de Jesús 3',
   short: 'LF3',
   color: '#8B1E3F',
-  section: 'lafe',
+  section: 'cursos',
   source: 'starter',
   managed: false,
   coverUrl: '/assets/course-covers/la-fe-de-jesus-3.webp',
