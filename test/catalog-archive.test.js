@@ -37,7 +37,7 @@ test('an exact current catalog fingerprint replaces only the legacy full archive
   assert.notEqual(result, manifest);
 });
 
-test('catalog fingerprint uses ordered public content and ordered HTTPS original sources', () => {
+test('catalog fingerprint uses public content with ordered lessons and HTTPS original sources', () => {
   const lesson = {
     id: 'a', title: 'La Biblia', url: 'https://files.example/a.pdf', type: 'pdf',
     sourceUrl: 'https://files.example/source.pptx', originalUrl: 'https://files.example/original.pptx',
@@ -66,13 +66,12 @@ test('catalog fingerprint uses ordered public content and ordered HTTPS original
   assert.notEqual(catalogFingerprint(differentSourceField), catalogFingerprint(manifest));
 });
 
-test('course or lesson additions, removals, reordering and content changes hide a stale legacy archive', () => {
+test('catalog content changes and lesson reordering hide a stale legacy archive', () => {
   const initial = fixture();
   const archive = { url: newZip, fingerprint: catalogFingerprint(initial) };
   const changes = {
     'add course': manifest => manifest.courses.push({ id: 'new', name: 'Nuevo', lessons: [] }),
     'remove course': manifest => manifest.courses.pop(),
-    'reorder courses': manifest => manifest.courses.reverse(),
     'course ID': manifest => { manifest.courses[0].id = 'changed'; },
     'course name': manifest => { manifest.courses[0].name = 'Nombre nuevo'; },
     'add lesson': manifest => manifest.courses[0].lessons.push({ id: '1-03', title: 'Nueva', url: 'https://files.example/new.pdf', type: 'pdf' }),
@@ -97,6 +96,28 @@ test('course or lesson additions, removals, reordering and content changes hide 
     assert.equal(result.courses, manifest.courses, label);
     assert.equal(manifest.zip, oldZip, `${label}: input stays untouched`);
   }
+});
+
+test('moving La Fe de Jesús 3 to the first course category preserves the archive and display order', () => {
+  const manifest = fixture();
+  manifest.courses.push({ id: 'la-fe-de-jesus-3', name: 'La Fe de Jesús 3', section: 'lafe', lessons: [
+    { id: 'lf3-01', title: 'Dios', url: 'https://files.example/lf3-01.pdf', type: 'pdf' },
+  ] });
+  const archive = freeze({ url: newZip, fingerprint: catalogFingerprint(manifest) });
+  const firstCourse = manifest.courses.pop();
+  firstCourse.section = 'cursos';
+  manifest.courses.unshift(firstCourse);
+  freeze(manifest);
+  const before = structuredClone(manifest);
+  const result = applyCatalogArchive(manifest, archive);
+  assert.equal(catalogFingerprint(manifest), archive.fingerprint);
+  assert.equal(result.zip, newZip);
+  assert.equal(result.zipKind, 'current');
+  assert.equal(result.courses, manifest.courses);
+  assert.deepEqual(result.courses.map(course => course.id), ['la-fe-de-jesus-3', '1', '13']);
+  assert.equal(result.courses[0].section, 'cursos');
+  assert.deepEqual(result.courses[1].lessons.map(lesson => lesson.id), ['1-01', '1-02']);
+  assert.deepEqual(manifest, before);
 });
 
 test('every supported HTTPS original-source field participates in archive freshness', () => {
