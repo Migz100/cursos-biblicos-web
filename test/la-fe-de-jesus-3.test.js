@@ -8,15 +8,15 @@ const { LA_FE_DE_JESUS_3 } = require('../api/_lib/cms/la-fe-de-jesus-3');
 const root = path.join(__dirname, '..');
 const readJson = file => JSON.parse(fs.readFileSync(path.join(root, file), 'utf8'));
 
-test('La Fe de Jesús 3 is added once, after the existing courses, without changing them', () => {
+test('La Fe de Jesús 3 is added once, before the existing courses, without changing them', () => {
   const manifest = { revision: 'r', courses: [{ id: '1', name: 'Fe de Jesús', lessons: [] }] };
   const revised = applyContentRevisions(manifest);
-  assert.deepEqual(revised.courses.map(course => course.id), ['1', 'la-fe-de-jesus-3']);
-  assert.deepEqual(revised.courses[0], manifest.courses[0]);
+  assert.deepEqual(revised.courses.map(course => course.id), ['la-fe-de-jesus-3', '1']);
+  assert.deepEqual(revised.courses[1], manifest.courses[0]);
   assert.equal(manifest.courses.length, 1);
   const again = applyContentRevisions(revised);
   assert.equal(again.courses.filter(course => course.id === 'la-fe-de-jesus-3').length, 1);
-  revised.courses[1].lessons[0].title = 'changed';
+  revised.courses[0].lessons[0].title = 'changed';
   assert.notEqual(LA_FE_DE_JESUS_3.lessons[0].title, 'changed');
 });
 

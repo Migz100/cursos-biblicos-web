@@ -60,10 +60,10 @@ const course = Object.freeze({
   }))
 });
 
-// Adds the course once, after the existing ones, unless the catalog already has it.
+// Adds the course once, before the existing ones, unless the catalog already has it.
 function withLaFeDeJesus3(courses) {
   if (courses.some(item => item.id === COURSE_ID)) return courses;
-  return [...courses, { ...course, lessons: course.lessons.map(lesson => ({ ...lesson })) }];
+  return [{ ...course, lessons: course.lessons.map(lesson => ({ ...lesson })) }, ...courses];
 }
 
 module.exports = { LA_FE_DE_JESUS_3: course, withLaFeDeJesus3 };

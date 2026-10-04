@@ -1,7 +1,7 @@
 const { applyCatalogArchive } = require('./catalog-archive');
 const catalogArchive = require('./catalog-archive.json');
 const { withLaFeDeJesus3 } = require('./la-fe-de-jesus-3');
-const CONTENT_REVISION_VERSION = 'content-la-fe-3-20261003-v8';
+const CONTENT_REVISION_VERSION = 'content-la-fe-3-20261003-v9';
 const BLOB_ORIGIN = 'https://s0anajbi1aoffqbv.public.blob.vercel-storage.com';
 const REVISION_PATH = `${BLOB_ORIGIN}/revisions-20260926-salvacion`;
 const ORIGINAL_LESSON = `${BLOB_ORIGIN}/la-fe-de-jesus-v2/Leccion%2007-WDj950nBdSkHchQxIWopEwmjQR6WTw.pdf`;

@@ -42,7 +42,9 @@ function setup() {
         const selected = shareTokenFromRequest(req);
         if (!selected) return manifest;
         if (selected !== scope) throw new CmsError(404, 'SHARE_NOT_FOUND', 'Missing selection');
-        return { courses: [{ ...manifest.courses[0], zip: undefined, lessons: [{ ...manifest.courses[0].lessons[0], lessonNumber: 3 }] }] };
+        const course = manifest.courses.find(course => course.id === '1');
+        const lesson = course.lessons.find(lesson => lesson.id === '1-01');
+        return { courses: [{ ...course, zip: undefined, lessons: [{ ...lesson, lessonNumber: 3 }] }] };
       }
     }
   };

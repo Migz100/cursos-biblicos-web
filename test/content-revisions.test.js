@@ -32,20 +32,24 @@ function freeze(value) {
   return Object.freeze(value);
 }
 
+function courseById(manifest, id) {
+  return manifest.courses.find(course => course.id === id);
+}
+
 test('content revision changes only the targeted PDF and original archives without mutating the manifest', () => {
   const original = freeze(fixture());
   const before = structuredClone(original);
   const result = applyContentRevisions(original);
   assert.deepEqual(original, before);
   assert.equal(result.zip, undefined);
-  assert.equal(result.courses[0].zip, `${origin}/revisions-20260927-la-fe/la-fe-de-jesus-pdf.zip`);
-  assert.equal(result.courses[0].pptZip, `${origin}/revisions-20260927-la-fe/la-fe-de-jesus-ppt.zip`);
-  assert.equal(result.courses[0].pptZipKind, 'current');
-  assert.deepEqual(result.courses[0].lessons[0], {
+  assert.equal(courseById(result, '13').zip, `${origin}/revisions-20260927-la-fe/la-fe-de-jesus-pdf.zip`);
+  assert.equal(courseById(result, '13').pptZip, `${origin}/revisions-20260927-la-fe/la-fe-de-jesus-ppt.zip`);
+  assert.equal(courseById(result, '13').pptZipKind, 'current');
+  assert.deepEqual(courseById(result, '13').lessons[0], {
     ...before.courses[0].lessons[0], url: `${revised}/leccion-07.pdf`, downloadUrl: `${revised}/leccion-07.pdf?download=1`,
   });
-  assert.deepEqual(result.courses[0].lessons[1], before.courses[0].lessons[1]);
-  assert.deepEqual(result.courses[1], before.courses[1]);
+  assert.deepEqual(courseById(result, '13').lessons[1], before.courses[0].lessons[1]);
+  assert.deepEqual(courseById(result, '14'), courseById(before, '14'));
   assert.equal(result.revision, before.revision);
   assert.equal(result.zipKind, undefined);
 });
@@ -58,7 +62,7 @@ test('future CMS lesson replacements and changed lesson identities remain author
   ]) {
     const manifest = fixture();
     Object.assign(manifest.courses[0].lessons[0], replacement);
-    assert.deepEqual(applyContentRevisions(manifest).courses[0].lessons[0], manifest.courses[0].lessons[0]);
+    assert.deepEqual(courseById(applyContentRevisions(manifest), '13').lessons[0], manifest.courses[0].lessons[0]);
   }
 });
 
@@ -70,8 +74,8 @@ test('each archive replacement requires its exact original URL and never adds mi
       if (target === 'ppt') manifest.courses[0].pptZip = value;
       const result = applyContentRevisions(manifest);
       assert.equal(result.zip, undefined);
-      assert.equal(result.courses[0].zip, target === 'pdf' ? value : `${origin}/revisions-20260927-la-fe/la-fe-de-jesus-pdf.zip`);
-      assert.equal(result.courses[0].pptZip, target === 'ppt' ? value : `${origin}/revisions-20260927-la-fe/la-fe-de-jesus-ppt.zip`);
+      assert.equal(courseById(result, '13').zip, target === 'pdf' ? value : `${origin}/revisions-20260927-la-fe/la-fe-de-jesus-pdf.zip`);
+      assert.equal(courseById(result, '13').pptZip, target === 'ppt' ? value : `${origin}/revisions-20260927-la-fe/la-fe-de-jesus-ppt.zip`);
     }
   }
   const manifest = fixture();
@@ -80,8 +84,8 @@ test('each archive replacement requires its exact original URL and never adds mi
   delete manifest.courses[0].pptZip;
   const result = applyContentRevisions(manifest);
   assert.equal(Object.hasOwn(result, 'zip'), false);
-  assert.equal(Object.hasOwn(result.courses[0], 'zip'), false);
-  assert.equal(Object.hasOwn(result.courses[0], 'pptZip'), false);
+  assert.equal(Object.hasOwn(courseById(result, '13'), 'zip'), false);
+  assert.equal(Object.hasOwn(courseById(result, '13'), 'pptZip'), false);
 });
 
 function loadModule(relativePath, overrides) {
@@ -119,7 +123,7 @@ async function requestCatalog(manifest, selection) {
 test('public catalog versions the content ETag while retaining the cover version', async () => {
   const result = await requestCatalog(freeze(fixture()));
   assert.equal(result.code, 200);
-  assert.equal(result.body.courses[0].lessons[0].url, `${revised}/leccion-07.pdf`);
+  assert.equal(courseById(result.body, '13').lessons[0].url, `${revised}/leccion-07.pdf`);
   assert.notEqual(result.headers.ETag, courseCoverEtag('manifest-before'));
   assert.equal(result.headers.ETag, courseCoverEtag(`manifest-before-${CONTENT_REVISION_VERSION}`));
   assert.match(result.headers.ETag, /course-covers-v1/);
@@ -129,8 +133,8 @@ test('catalog applies content revisions before sharing restrictions and does not
   const original = freeze(fixture());
   const result = await requestCatalog(original, [{ courseId: '13', lessonIds: ['13-07'] }]);
   assert.equal(result.code, 200);
-  assert.equal(result.beforeRestriction.courses[0].lessons[0].url, `${revised}/leccion-07.pdf`);
-  assert.equal(result.beforeRestriction.courses[0].zip, `${origin}/revisions-20260927-la-fe/la-fe-de-jesus-pdf.zip`);
+  assert.equal(courseById(result.beforeRestriction, '13').lessons[0].url, `${revised}/leccion-07.pdf`);
+  assert.equal(courseById(result.beforeRestriction, '13').zip, `${origin}/revisions-20260927-la-fe/la-fe-de-jesus-pdf.zip`);
   assert.equal(result.body.courses.length, 1);
   assert.equal(result.body.courses[0].lessons.length, 1);
   assert.equal(result.body.courses[0].lessons[0].id, '13-07');
@@ -157,12 +161,12 @@ test('La Fe de Jesús lessons 1, 4, 6, 8 and 10 open the corrected same-origin P
     id, title: id, type: 'pdf', url: `${origin}/la-fe-de-jesus-v2/${file}`, downloadUrl: `${origin}/la-fe-de-jesus-v2/${file}?download=1`,
   }));
   const fields = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'assets', 'answer-fields.json'), 'utf8')).documents;
-  for (const lesson of applyContentRevisions(manifest).courses[0].lessons) {
+  for (const lesson of courseById(applyContentRevisions(manifest), '13').lessons) {
     const url = `/assets/revisions/la-fe-de-jesus/leccion-${lesson.id.slice(3)}.pdf`;
     assert.equal(lesson.url, url);
     assert.equal(lesson.downloadUrl, url);
     assert.ok(fs.existsSync(path.join(__dirname, '..', url)));
     assert.equal(fields[`13|${lesson.id}`].url, url);
   }
-  assert.deepEqual(applyContentRevisions(fixture()).courses[1], fixture().courses[1]);
+  assert.deepEqual(courseById(applyContentRevisions(fixture()), '14'), courseById(fixture(), '14'));
 });

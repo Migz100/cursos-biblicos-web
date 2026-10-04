@@ -144,7 +144,7 @@ test('catalog scope ignores altered course/lesson parameters and removes every b
   assert.equal(normal.body.zip, state.manifest.zip);
   assert.deepEqual(normal.body.trash, state.manifest.trash);
   assert.equal(normal.body.courses.length, 3);
-  assert.equal(normal.body.courses[2].id, 'la-fe-de-jesus-3');
+  assert.equal(normal.body.courses[0].id, 'la-fe-de-jesus-3');
   assert.match(normal.headers['Cache-Control'], /public/);
   assert.ok(normal.headers.ETag);
 });
